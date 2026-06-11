@@ -51,7 +51,7 @@
     
     <!-- ================= HALAMAN LOGIN ================= -->
     <div id="pageLogin" class="flex-1 flex flex-col justify-between p-8">
-      <div class="flex-1 flex flex-col justify-center items-center my-auto">
+      <div class="flex-1 flex flex-col justify-center items-center my-auto w-full">
         <!-- Logo Sekolah SMAN 1 Parung (SVG Premium) -->
         <div class="w-28 h-28 bg-emerald-50 rounded-full flex items-center justify-center mb-6 shadow-md border border-emerald-100">
           <svg class="w-16 h-16 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -64,14 +64,14 @@
         <p class="text-sm text-slate-400 text-center mt-1">Presensi Real-time SMAN 1 Parung</p>
 
         <!-- Formulir Login -->
-        <div class="w-full mt-10 space-y-4">
+        <form id="loginFormElement" onsubmit="event.preventDefault(); handleLogin();" class="w-full mt-10 space-y-4">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">NIP</label>
             <div class="relative">
               <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                 <i class="fa-solid fa-id-card"></i>
               </span>
-              <input type="text" id="loginNip" placeholder="Masukkan NIP (guru / admin)" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+              <input type="text" id="loginNip" required placeholder="Masukkan NIP (guru / admin)" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
             </div>
           </div>
           <div>
@@ -80,15 +80,15 @@
               <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                 <i class="fa-solid fa-lock"></i>
               </span>
-              <input type="password" id="loginPass" placeholder="Masukkan Password" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+              <input type="password" id="loginPass" required placeholder="Masukkan Password" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
             </div>
           </div>
-        </div>
-
-        <button id="btnLoginSubmit" onclick="handleLogin()" class="w-full mt-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition-all text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/20 flex justify-center items-center space-x-2">
-          <span>Masuk Aplikasi</span>
-          <i class="fa-solid fa-arrow-right text-xs"></i>
-        </button>
+          
+          <button type="submit" id="btnLoginSubmit" class="w-full mt-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition-all text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/20 flex justify-center items-center space-x-2 cursor-pointer">
+            <span>Masuk Aplikasi</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
       </div>
       <div class="text-center text-xs text-slate-400 mt-6">
         &copy; 2026 SMAN 1 Parung. Hak Cipta Dilindungi.
@@ -269,7 +269,7 @@
             <label class="block text-xs font-semibold text-slate-500 mb-1">Keterangan / Alasan</label>
             <textarea id="izinKeterangan" rows="3" placeholder="Tuliskan alasan detail..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none"></textarea>
           </div>
-          <button onclick="submitIzinForm()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition">Kirim Pengajuan Izin</button>
+          <button onclick="submitIzinForm()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition cursor-pointer">Kirim Pengajuan Izin</button>
         </div>
 
         <!-- Riwayat Izin -->
@@ -317,7 +317,7 @@
             <option value="Juni" selected>Juni</option>
             <option value="Juli">Juli</option>
           </select>
-          <button onclick="loadAttendanceHistory()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">Filter</button>
+          <button onclick="loadAttendanceHistory()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer">Filter</button>
         </div>
 
         <div class="grid grid-cols-2 gap-3.5">
@@ -406,7 +406,7 @@
             <label class="block text-xs font-semibold text-slate-400 mb-1">Detail Alamat Tertulis</label>
             <input type="text" id="alamatTeks" placeholder="Alamat lengkap..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none">
           </div>
-          <button onclick="saveLocationAndAddress()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition">
+          <button onclick="saveLocationAndAddress()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition cursor-pointer">
             Simpan Alamat & Koordinat
           </button>
         </div>
@@ -646,144 +646,167 @@
     }
 
     // Deteksi Google Apps Script Environment dan buat mock otomatis jika tidak ada
-    const isGoogleScriptAvailable = typeof google !== 'undefined' && google.script && google.script.run;
-    
-    if (!isGoogleScriptAvailable) {
-      console.log("Menjalankan Simulasi Berbasis Lokal SMAN 1 Parung.");
-      
-      const simulateRun = (method, args, successCb) => {
-        setTimeout(() => {
-          let localUsers = getStoredData("users", []);
-          let localPresensi = getStoredData("presensi", []);
-          let localIzin = getStoredData("izin", []);
-          const todayStr = new Date().toISOString().split('T')[0];
-
-          if (method === "loginUser") {
-            const user = localUsers.find(u => u.NIP === args[0] && u.Password === args[1]);
-            successCb(user ? { success: true, user: { nip: user.NIP, nama: user.Nama, role: user.Role, foto: user.Foto, unitKerja: user["Unit Kerja"], jabatan: user.Jabatan, pangkat: user.Pangkat, atasan: user.Atasan, alamat: user.Alamat, lat: user.Lat, lng: user.Lng } } : { success: false, message: "NIP/Password salah!" });
-          }
-          else if (method === "getTodayAttendance") {
-            const record = localPresensi.find(p => p.NIP === args[0] && p.Tanggal === todayStr);
-            successCb(record || null);
-          }
-          else if (method === "getLivePresensiToday") {
-            const list = localUsers.filter(u => u.Role === "Guru").map(u => {
-              const att = localPresensi.find(p => p.NIP === u.NIP && p.Tanggal === todayStr);
-              return { nama: u.Nama, nip: u.NIP, foto: u.Foto, masuk: att ? att["Jam Masuk"] : "", pulang: att ? att["Jam Pulang"] : "", status: att ? att.Status : "Belum Absen" };
-            });
-            successCb(list);
-          }
-          else if (method === "savePresensi") {
-            const [nip, nama, type, lat, lng, photo] = args;
-            const targetLat = -6.438500, targetLng = 106.729500;
-            const dist = getDistanceInMeter(lat, lng, targetLat, targetLng);
-            if (dist > 100) {
-              successCb({ success: false, message: `Berada di luar radius sekolah (${Math.round(dist)}m)` });
-              return;
-            }
-            const timeStr = new Date().toTimeString().split(' ')[0];
-            const limit = new Date(); limit.setHours(6, 30, 0);
-            let status = (type === "masuk" && new Date() > limit) ? "Terlambat" : "Tepat Waktu";
-
-            if (type === "masuk") {
-              localPresensi.push({ ID: "PRES-" + Date.now(), NIP: nip, Nama: nama, Tanggal: todayStr, "Jam Masuk": timeStr, "Jam Pulang": "", Status: status, LatMasuk: lat, LngMasuk: lng, FotoMasuk: photo });
-            } else {
-              const found = localPresensi.find(p => p.NIP === nip && p.Tanggal === todayStr);
-              if (found) { found["Jam Pulang"] = timeStr; found.LatPulang = lat; found.LngPulang = lng; found.FotoPulang = photo; }
-            }
-            setStoredData("presensi", localPresensi);
-            successCb({ success: true, time: timeStr, type: type, message: `Absen ${type} berhasil dicatat!` });
-          }
-          else if (method === "submitIzin") {
-            const [nip, nama, dataIzin] = args;
-            localIzin.push({ ID_Izin: "IZ-" + Date.now(), NIP: nip, Nama: nama, "Jenis Izin": dataIzin.jenisIzin, Tanggal: dataIzin.tanggal, Waktu: dataIzin.waktu || "-", Keterangan: dataIzin.keterangan, Status: "Menunggu", Tahun: "2026", Bulan: "Juni" });
-            setStoredData("izin", localIzin);
-            successCb({ success: true, message: "Izin berhasil diajukan!" });
-          }
-          else if (method === "getIzinList") {
-            successCb(args[0] ? localIzin.filter(i => i.NIP === args[0]) : localIzin);
-          }
-          else if (method === "saveProfileAddress") {
-            const [nip, alamat, lat, lng] = args;
-            const found = localUsers.find(u => u.NIP === nip);
-            if (found) { found.Alamat = alamat; found.Lat = lat; found.Lng = lng; }
-            setStoredData("users", localUsers);
-            successCb({ success: true, message: "Lokasi tempat tinggal berhasil disimpan!" });
-          }
-          else if (method === "updateProfilePhoto") {
-            const [nip, photoBase64] = args;
-            const found = localUsers.find(u => u.NIP === nip);
-            if (found) { found.Foto = photoBase64; }
-            setStoredData("users", localUsers);
-            successCb({ success: true, photoUrl: photoBase64, message: "Foto profil diperbarui!" });
-          }
-          else if (method === "getPresensiHistory") {
-            const [nip, tahun, bulan] = args;
-            const records = localPresensi.filter(p => p.NIP === nip);
-            const approvedIzin = localIzin.filter(i => i.NIP === nip && i.Status === "Disetujui");
-            let lateMins = 0, tapCount = 0;
-            records.forEach(r => {
-              if (r["Jam Masuk"]) {
-                const p = r["Jam Masuk"].split(":");
-                const mins = parseInt(p[0]) * 60 + parseInt(p[1]);
-                if (mins > 390) lateMins += (mins - 390);
-              }
-              if (r["Jam Masuk"] && !r["Jam Pulang"]) tapCount++;
-            });
-            successCb({ presensi: records, rekap: { alfa: records.length === 0 ? 480 : 0, telat: lateMins, tap: tapCount, izinTelat: approvedIzin.filter(i => i["Jenis Izin"] === "Terlambat Masuk").length, izinPulangCepat: approvedIzin.filter(i => i["Jenis Izin"] === "Izin Pulang Cepat").length } });
-          }
-          else if (method === "getAdminDashboardData") {
-            const rekap = localUsers.filter(u => u.Role === "Guru").map(g => {
-              const prec = localPresensi.filter(p => p.NIP === g.NIP);
-              return { nip: g.NIP, nama: g.Nama, foto: g.Foto, jabatan: g.Jabatan, hadir: prec.length, telat: 0, izin: localIzin.filter(i => i.NIP === g.NIP && i.Status === "Disetujui").length };
-            });
-            successCb({ rekapGuru: rekap, pendingIzin: localIzin.filter(i => i.Status === "Menunggu") });
-          }
-          else if (method === "updateIzinStatus") {
-            const [id, stat] = args;
-            const found = localIzin.find(i => i.ID_Izin === id);
-            if (found) found.Status = stat;
-            setStoredData("izin", localIzin);
-            successCb({ success: true, message: `Izin berhasil di-${stat.toLowerCase()}` });
-          }
-          else if (method === "getAdminLaporanData") {
-            const totalMsk = localPresensi.length;
-            const countIzin = localIzin.filter(i => i.Status === "Disetujui" && !i["Jenis Izin"].includes("Dinas")).length;
-            const countDinas = localIzin.filter(i => i.Status === "Disetujui" && i["Jenis Izin"].includes("Dinas")).length;
-            successCb({ totalMasuk: totalMsk, cuti: countIzin, dinas: countDinas, alfa: 1, lateMin: 15, tapMin: 0, alfaMin: 480, totalPenalty: 495 });
-          }
-        }, 300);
-      };
-
-      const createMockRunner = (successFn, failureFn) => {
-        const methods = [
-          'loginUser', 'getTodayAttendance', 'getLivePresensiToday', 'savePresensi',
-          'submitIzin', 'getIzinList', 'saveProfileAddress', 'updateProfilePhoto',
-          'getPresensiHistory', 'getAdminDashboardData', 'updateIzinStatus', 'getAdminLaporanData'
-        ];
-        const runner = {};
-        methods.forEach(method => {
-          runner[method] = function(...args) {
-            simulateRun(method, args, successFn, failureFn);
-          };
-        });
-        return runner;
-      };
-
-      window.google = {
-        script: {
-          run: {
-            withSuccessHandler: function(sh) {
-              const r = createMockRunner(sh, null);
-              return Object.assign({ withFailureHandler: function(fh) { return createMockRunner(sh, fh); } }, r);
-            },
-            withFailureHandler: function(fh) {
-              const r = createMockRunner(null, fh);
-              return Object.assign({ withSuccessHandler: function(sh) { return createMockRunner(sh, fh); } }, r);
-            }
-          }
+    const mockGoogleScriptRun = {
+      isMock: true,
+      _delay: function(callback, data) {
+        setTimeout(() => callback(data), 300);
+        return this;
+      },
+      _successHandler: null,
+      _failureHandler: null,
+      withSuccessHandler: function(handler) {
+        this._successHandler = handler;
+        return this;
+      },
+      withFailureHandler: function(handler) {
+        this._failureHandler = handler;
+        return this;
+      },
+      loginUser: function(nip, pass) {
+        let localUsers = getStoredData("users", []);
+        const user = localUsers.find(u => u.NIP === nip && u.Password === pass);
+        if (user) {
+          this._delay(this._successHandler, {
+            success: true,
+            user: { nip: user.NIP, nama: user.Nama, role: user.Role, foto: user.Foto, unitKerja: user["Unit Kerja"], jabatan: user.Jabatan, pangkat: user.Pangkat, atasan: user.Atasan, alamat: user.Alamat, lat: user.Lat, lng: user.Lng }
+          });
+        } else {
+          this._delay(this._successHandler, { success: false, message: "NIP atau Password salah!" });
         }
-      };
+        return this;
+      },
+      getTodayAttendance: function(nip) {
+        let localPresensi = getStoredData("presensi", []);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const record = localPresensi.find(p => p.NIP === nip && p.Tanggal === todayStr);
+        this._delay(this._successHandler, record || null);
+        return this;
+      },
+      getLivePresensiToday: function() {
+        let localUsers = getStoredData("users", []);
+        let localPresensi = getStoredData("presensi", []);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const list = localUsers.filter(u => u.Role === "Guru").map(u => {
+          const att = localPresensi.find(p => p.NIP === u.NIP && p.Tanggal === todayStr);
+          return { nama: u.Nama, nip: u.NIP, foto: u.Foto, masuk: att ? att["Jam Masuk"] : "", pulang: att ? att["Jam Pulang"] : "", status: att ? att.Status : "Belum Absen" };
+        });
+        this._delay(this._successHandler, list);
+        return this;
+      },
+      savePresensi: function(nip, nama, type, lat, lng, photo) {
+        let localPresensi = getStoredData("presensi", []);
+        const targetLat = -6.438500, targetLng = 106.729500;
+        const dist = getDistanceInMeter(lat, lng, targetLat, targetLng);
+        if (dist > 100) {
+          this._delay(this._successHandler, { success: false, message: `Berada di luar radius sekolah (${Math.round(dist)}m)` });
+          return this;
+        }
+        const todayStr = new Date().toISOString().split('T')[0];
+        const timeStr = new Date().toTimeString().split(' ')[0];
+        const limit = new Date(); limit.setHours(6, 30, 0);
+        let status = (type === "masuk" && new Date() > limit) ? "Terlambat" : "Tepat Waktu";
+
+        if (type === "masuk") {
+          localPresensi.push({ ID: "PRES-" + Date.now(), NIP: nip, Nama: nama, Tanggal: todayStr, "Jam Masuk": timeStr, "Jam Pulang": "", Status: status, LatMasuk: lat, LngMasuk: lng, FotoMasuk: photo });
+        } else {
+          const found = localPresensi.find(p => p.NIP === nip && p.Tanggal === todayStr);
+          if (found) { found["Jam Pulang"] = timeStr; found.LatPulang = lat; found.LngPulang = lng; found.FotoPulang = photo; }
+        }
+        setStoredData("presensi", localPresensi);
+        this._delay(this._successHandler, { success: true, time: timeStr, type: type, message: `Absen ${type} berhasil dicatat!` });
+        return this;
+      },
+      submitIzin: function(nip, nama, dataIzin) {
+        let localIzin = getStoredData("izin", []);
+        localIzin.push({ ID_Izin: "IZ-" + Date.now(), NIP: nip, Nama: nama, "Jenis Izin": dataIzin.jenisIzin, Tanggal: dataIzin.tanggal, Waktu: dataIzin.waktu || "-", Keterangan: dataIzin.keterangan, Status: "Menunggu", Tahun: "2026", Bulan: "Juni" });
+        setStoredData("izin", localIzin);
+        this._delay(this._successHandler, { success: true, message: "Izin berhasil diajukan!" });
+        return this;
+      },
+      getIzinList: function(nip) {
+        let localIzin = getStoredData("izin", []);
+        const result = nip ? localIzin.filter(i => i.NIP === nip) : localIzin;
+        this._delay(this._successHandler, result);
+        return this;
+      },
+      saveProfileAddress: function(nip, alamat, lat, lng) {
+        let localUsers = getStoredData("users", []);
+        const found = localUsers.find(u => u.NIP === nip);
+        if (found) { found.Alamat = alamat; found.Lat = lat; found.Lng = lng; }
+        setStoredData("users", localUsers);
+        this._delay(this._successHandler, { success: true, message: "Lokasi tempat tinggal berhasil disimpan!" });
+        return this;
+      },
+      updateProfilePhoto: function(nip, photoBase64) {
+        let localUsers = getStoredData("users", []);
+        const found = localUsers.find(u => u.NIP === nip);
+        if (found) { found.Foto = photoBase64; }
+        setStoredData("users", localUsers);
+        this._delay(this._successHandler, { success: true, photoUrl: photoBase64, message: "Foto profil diperbarui!" });
+        return this;
+      },
+      getPresensiHistory: function(nip, tahun, bulan) {
+        let localPresensi = getStoredData("presensi", []);
+        let localIzin = getStoredData("izin", []);
+        const records = localPresensi.filter(p => p.NIP === nip);
+        const approvedIzin = localIzin.filter(i => i.NIP === nip && i.Status === "Disetujui");
+        let lateMins = 0, tapCount = 0;
+        records.forEach(r => {
+          if (r["Jam Masuk"]) {
+            const p = r["Jam Masuk"].split(":");
+            const mins = parseInt(p[0]) * 60 + parseInt(p[1]);
+            if (mins > 390) lateMins += (mins - 390);
+          }
+          if (r["Jam Masuk"] && !r["Jam Pulang"]) tapCount++;
+        });
+        this._delay(this._successHandler, {
+          presensi: records,
+          rekap: {
+            alfa: records.length === 0 ? 480 : 0,
+            telat: lateMins,
+            tap: tapCount,
+            izinTelat: approvedIzin.filter(i => i["Jenis Izin"] === "Terlambat Masuk").length,
+            izinPulangCepat: approvedIzin.filter(i => i["Jenis Izin"] === "Izin Pulang Cepat").length
+          }
+        });
+        return this;
+      },
+      getAdminDashboardData: function() {
+        let localUsers = getStoredData("users", []);
+        let localPresensi = getStoredData("presensi", []);
+        let localIzin = getStoredData("izin", []);
+        const rekap = localUsers.filter(u => u.Role === "Guru").map(g => {
+          const prec = localPresensi.filter(p => p.NIP === g.NIP);
+          return { nip: g.NIP, nama: g.Nama, foto: g.Foto, jabatan: g.Jabatan, hadir: prec.length, telat: 0, izin: localIzin.filter(i => i.NIP === g.NIP && i.Status === "Disetujui").length };
+        });
+        this._delay(this._successHandler, { rekapGuru: rekap, pendingIzin: localIzin.filter(i => i.Status === "Menunggu") });
+        return this;
+      },
+      updateIzinStatus: function(id, stat) {
+        let localIzin = getStoredData("izin", []);
+        const found = localIzin.find(i => i.ID_Izin === id);
+        if (found) found.Status = stat;
+        setStoredData("izin", localIzin);
+        this._delay(this._successHandler, { success: true, message: `Izin berhasil di-${stat.toLowerCase()}` });
+        return this;
+      },
+      getAdminLaporanData: function(periode) {
+        let localPresensi = getStoredData("presensi", []);
+        let localIzin = getStoredData("izin", []);
+        const totalMsk = localPresensi.length;
+        const countIzin = localIzin.filter(i => i.Status === "Disetujui" && !i["Jenis Izin"].includes("Dinas")).length;
+        const countDinas = localIzin.filter(i => i.Status === "Disetujui" && i["Jenis Izin"].includes("Dinas")).length;
+        this._delay(this._successHandler, { totalMasuk: totalMsk, cuti: countIzin, dinas: countDinas, alfa: 1, lateMin: 15, tapMin: 0, alfaMin: 480, totalPenalty: 495 });
+        return this;
+      }
+    };
+
+    // Fungsi Resolver Dinamis untuk memisahkan GAS real dan simulasi lokal secara aman
+    function runScript() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        return google.script.run;
+      }
+      return mockGoogleScriptRun;
     }
 
     // State Internal Aplikasi
@@ -853,11 +876,11 @@
       toggleLoader(true);
       if (loginBtn) loginBtn.disabled = true;
 
-      // Proteksi Tambahan Re-try loop jika google.script.run lambat dimuat oleh Browser luar
+      // Proteksi Tambahan Re-try loop jika Google API Apps Script lambat termuat oleh Browser luar
       let attempt = 0;
       const makeLoginCall = () => {
         try {
-          google.script.run
+          runScript()
             .withSuccessHandler(function(response) {
               toggleLoader(false);
               if (loginBtn) loginBtn.disabled = false;
@@ -977,7 +1000,7 @@
     }
 
     function syncAttendanceStatus() {
-      google.script.run
+      runScript()
         .withSuccessHandler(function(todayRecord) {
           const lonceng = document.getElementById("btnLonceng");
           const subText = document.getElementById("loncengSubText");
@@ -1020,7 +1043,7 @@
         </div>
       `;
 
-      google.script.run
+      runScript()
         .withSuccessHandler(function(teachers) {
           if (!teachers || teachers.length === 0) {
             listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Belum ada aktivitas presensi.</p>';
@@ -1128,7 +1151,7 @@
       document.getElementById("btnLonceng").parentElement.classList.remove("hidden");
 
       toggleLoader(true);
-      google.script.run
+      runScript()
         .withSuccessHandler(function(res) {
           toggleLoader(false);
           if (res.success) {
@@ -1307,6 +1330,10 @@
       }
     }
 
+    // ==========================================
+    // SELESAI SIMULASI MAPS DINAS
+    // ==========================================
+
     function useCurrentLocationForDinas() {
       if (!navigator.geolocation) {
         showToast("GPS tidak didukung oleh browser Anda.", "error");
@@ -1365,7 +1392,7 @@
       const payload = { jenisIzin: jenis, tanggal: tanggal, waktu: waktu, keterangan: keteranganAkhir };
 
       toggleLoader(true);
-      google.script.run
+      runScript()
         .withSuccessHandler(function(res) {
           toggleLoader(false);
           if (res.success) {
@@ -1396,7 +1423,7 @@
       const filterBulan = document.getElementById("filterIzinBulan").value;
       const filterStatus = document.getElementById("filterIzinStatus").value;
 
-      google.script.run
+      runScript()
         .withSuccessHandler(function(list) {
           let filtered = list;
           if (filterTahun !== "Semua") filtered = filtered.filter(i => i.Tahun === filterTahun);
@@ -1440,7 +1467,7 @@
       const logContainer = document.getElementById("logPresensiList");
       logContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Memuat rekapitulasi...</p>';
 
-      google.script.run
+      runScript()
         .withSuccessHandler(function(res) {
           document.getElementById("rekapAlfa").innerText = res.rekap.alfa;
           document.getElementById("rekapTelat").innerText = res.rekap.telat;
@@ -1512,7 +1539,7 @@
         return;
       }
       toggleLoader(true);
-      google.script.run
+      runScript()
         .withSuccessHandler(function(res) {
           toggleLoader(false);
           if (res.success) {
@@ -1574,7 +1601,7 @@
       const dropdown = document.getElementById("pilihGuruAdmin");
       container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Memuat data guru...</p>';
 
-      google.script.run
+      runScript()
         .withSuccessHandler(function(res) {
           container.innerHTML = "";
           dropdown.innerHTML = '<option value="">-- Tampilkan Seluruh Guru --</option>';
@@ -1626,12 +1653,12 @@
       }
 
       toggleLoader(true);
-      google.script.run
+      runScript()
         .withSuccessHandler(function(res) {
           toggleLoader(false);
           card.classList.remove("hidden");
           
-          google.script.run.withSuccessHandler(function(adminData) {
+          runScript().withSuccessHandler(function(adminData) {
             const currentSelectedTeacher = adminData.rekapGuru.find(g => g.nip === nip);
             if (currentSelectedTeacher) {
               document.getElementById("detailGuruFoto").src = currentSelectedTeacher.foto;
@@ -1690,9 +1717,9 @@
       const container = document.getElementById("adminPendingIzinContainer");
       container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Memuat data pengajuan...</p>';
 
-      google.script.run
+      runScript()
         .withSuccessHandler(function() {
-          google.script.run.withSuccessHandler(function(serverList) {
+          runScript().withSuccessHandler(function(serverList) {
             let actualList = serverList || [];
             let list = actualList.filter(i => i.Status === currentUpropStatusFilter);
 
@@ -1739,7 +1766,7 @@
 
     function processApproval(idIzin, status) {
       toggleLoader(true);
-      google.script.run
+      runScript()
         .withSuccessHandler(function(res) {
           toggleLoader(false);
           if (res.success) {
@@ -1777,7 +1804,7 @@
     }
 
     function loadReportData(periode) {
-      google.script.run
+      runScript()
         .withSuccessHandler(function(data) {
           if (!data) return;
           document.getElementById("repTotalMasuk").innerHTML = `${data.totalMasuk || 0} <span class="text-xs font-normal">Hari</span>`;
@@ -1813,7 +1840,7 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         const base64String = e.target.result;
-        google.script.run
+        runScript()
           .withSuccessHandler(function(res) {
             toggleLoader(false);
             if (res.success) {
