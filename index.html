@@ -25,33 +25,29 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
 
-    <!-- CONTAINER UTAMA -->
-    <div id="app" class="max-w-md w-full mx-auto bg-white min-h-screen shadow-2xl flex flex-col justify-between relative overflow-hidden">
+    <!-- CONTAINER UTAMA (Maksimal Lebar Mobile/Tablet agar nyaman di HP & Browser) -->
+    <div id="app" class="max-w-md w-full mx-auto bg-white min-h-screen shadow-xl flex flex-col justify-between relative overflow-hidden">
         
         <!-- LOADING OVERLAY -->
         <div id="loading-overlay" class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm z-[110] flex flex-col items-center justify-center">
             <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p id="loading-text" class="text-xs font-semibold text-slate-600 mt-4">Menghubungkan ke database...</p>
-        </div>
-
-        <!-- NOTIFICATION TOAST -->
-        <div id="toast-notif" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg z-[120] text-xs font-semibold flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none">
-            <span id="toast-message">Notifikasi</span>
+            <p class="text-xs font-semibold text-slate-600 mt-4">Menghubungkan ke database...</p>
         </div>
 
         <!-- ================= PAGE: LOGIN ================= -->
         <div id="page-login" class="flex-1 flex flex-col justify-between p-6">
-            <div class="flex-1 flex flex-col justify-center items-center my-auto w-full">
-                <!-- Logo -->
+            <div class="flex-1 flex flex-col justify-center items-center my-auto">
+                <!-- Logo Placeholder -->
                 <div class="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 mb-6 relative overflow-hidden">
                     <i data-lucide="school" class="w-12 h-12 text-white"></i>
                     <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-white/10 rounded-full"></div>
                 </div>
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Presensi Guru Mandiri</h1>
-                <p class="text-sm text-slate-500 mt-1 mb-6">Silakan masuk ke akun Anda</p>
                 
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Presensi Guru SMAN 1</h1>
+                <p class="text-sm text-slate-500 mt-1 mb-8">Silakan masuk ke akun Anda</p>
+
                 <!-- Role Selector Tab -->
                 <div class="flex w-full bg-slate-100 p-1.5 rounded-xl mb-6">
                     <button onclick="switchLoginRole('guru')" id="btn-tab-guru" class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300">
@@ -69,7 +65,7 @@
                 <!-- Login Form -->
                 <div class="w-full space-y-4">
                     <div>
-                        <label id="lbl-nip" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">NIP</label>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">NIP</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
                                 <i data-lucide="credit-card" class="w-5 h-5"></i>
@@ -78,44 +74,23 @@
                         </div>
                     </div>
                     <div>
-                        <label id="lbl-pass" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password (Gunakan NIP)</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
                                 <i data-lucide="lock" class="w-5 h-5"></i>
                             </span>
-                            <input type="password" id="login-pass" placeholder="Masukkan password Anda" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm">
+                            <input type="password" id="login-pass" placeholder="Masukkan NIP Anda sebagai Password" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm">
                         </div>
                     </div>
                     <button onclick="handleLogin()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
                         Masuk Sistem <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
-                    
-                    <!-- PANEL KONFIGURASI API SPREADSHEET -->
-                    <div class="pt-2 border-t border-slate-100 flex flex-col items-center">
-                        <button onclick="toggleApiSettings()" class="text-xs text-slate-400 hover:text-blue-600 font-semibold flex items-center gap-1 transition-all">
-                            <i data-lucide="settings" class="w-3.5 h-3.5"></i> Atur Link Database Google Sheets
-                        </button>
-                        <div id="api-settings-panel" class="hidden w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-3 space-y-3">
-                            <div>
-                                <label class="block text-[9px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">URL Deployment Web App (Google Apps Script)</label>
-                                <input type="text" id="backend-api-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="saveApiUrl()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm">Simpan & Sinkronkan</button>
-                                <button onclick="clearApiUrl()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-bold rounded-xl transition-all">Reset</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center pt-2">
-                        <p class="text-[11px] text-slate-400">Gunakan Akun Demo Offline:</p>
-                        <p class="text-[11px] text-slate-500 font-mono">Guru/Admin: Masukkan NIP demo di atas dengan Password yang sama</p>
-                    </div>
                 </div>
             </div>
+
             <!-- Footer Login -->
             <div class="text-center py-4 border-t border-slate-100">
-                <p class="text-xs text-slate-400 font-medium">&copy; 2026 Presensi Guru Mandiri</p>
+                <p class="text-xs text-slate-400 font-medium">@2026 Presensi Guru SMAN 1</p>
             </div>
         </div>
 
@@ -128,7 +103,7 @@
                         <img id="guru-header-avatar" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-white/30 object-cover">
                         <div>
                             <p class="text-xs text-blue-100">Selamat bekerja,</p>
-                            <h2 id="guru-header-name" class="font-bold text-base leading-tight">Memuat nama...</h2>
+                            <h2 id="guru-header-name" class="font-bold text-base leading-tight">Memuat...</h2>
                             <p id="guru-header-nip" class="text-[10px] text-blue-200">NIP. -</p>
                         </div>
                     </div>
@@ -144,96 +119,67 @@
                     </div>
                     <div class="text-right">
                         <p id="live-clock" class="text-lg font-mono font-bold">07:00:00</p>
-                        <div class="flex items-center justify-end gap-1 mt-0.5">
-                            <p id="live-date" class="text-[10px] text-blue-100">Rabu, 1 Juli 2026</p>
-                        </div>
+                        <p id="live-date" class="text-[10px] text-blue-100">Selasa, 30 Juni 2026</p>
                     </div>
                 </div>
             </div>
 
-            <!-- GURU MAIN VIEWPORT -->
+            <!-- GURU MAIN VIEWPORT (Beranda, Izin, Rekap, Profil) -->
             <div class="flex-1 overflow-y-auto px-4 py-5 no-scrollbar pb-24">
                 
                 <!-- SUB-PAGE: BERANDA -->
                 <div id="guru-sub-beranda" class="space-y-6">
                     
-                    <!-- SIMULATOR WAKTU (Untuk kemudahan pengujian demo) -->
-                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-1.5 shadow-sm">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-bold text-amber-700 uppercase flex items-center gap-1">
-                                <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Simulator Waktu Demo
-                            </span>
-                            <span class="text-[9px] text-amber-600 font-semibold bg-white px-1.5 py-0.5 rounded border border-amber-100">Kunci Waktu Otomatis Aktif</span>
-                        </div>
-                        <select id="time-simulator" onchange="handleTimeSimulationChange()" class="w-full bg-white border border-amber-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-700">
-                            <option value="real">Gunakan Waktu Real-Time Sistem</option>
-                            <option value="07:00">Pagi Hari (07:00) - Jadwal Masuk Dibuka</option>
-                            <option value="16:00">Sore Hari (16:00) - Jadwal Pulang Dibuka</option>
-                            <option value="02:00">Malam Hari (02:00) - Lonceng Terkunci</option>
-                        </select>
-                    </div>
-
-                    <!-- KARTU UTAMA: LOKASI & SATU LONCENG PRESENSI -->
-                    <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-md flex flex-col items-center justify-center text-center space-y-5 relative overflow-hidden">
+                    <!-- AREA PRESENSI UTAMA DI TENGAH -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col items-center justify-center text-center space-y-6">
                         
-                        <!-- Header Lokasi Kantor -->
-                        <div class="space-y-1">
-                            <p class="text-[10px] text-slate-400 uppercase tracking-widest font-extrabold">Lokasi Presensi</p>
-                            <h3 class="text-xl font-black text-slate-900 flex items-center justify-center gap-1.5">
-                                <i data-lucide="map-pin" class="w-5 h-5 text-red-500 animate-bounce"></i> SMAN 1
-                            </h3>
-                            <div class="flex items-center justify-center gap-2 mt-1">
-                                <span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100">
-                                    Skema: Presensi Kantor
+                        <!-- Lokasi Presensi di Tengah -->
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lokasi Presensi</p>
+                            <h3 class="text-lg font-extrabold text-slate-900 mt-0.5">SMAN 1</h3>
+                            
+                            <!-- Jarak Real-Time Sejajar dengan Skema Presensi Kantor -->
+                            <div class="flex items-center justify-center gap-2 mt-1.5 text-xs text-slate-500 font-medium">
+                                <span class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span id="live-distance">Mendeteksi...</span>
                                 </span>
-                                <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100">
-                                    Jarak: 12 meter
+                                <span class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                    <i data-lucide="building" class="w-3.5 h-3.5 text-indigo-600"></i>
+                                    <span>Skema Kantor</span>
                                 </span>
                             </div>
                         </div>
 
-                        <!-- Central Bell (Lonceng) Presensi Area -->
-                        <div class="relative flex flex-col items-center justify-center py-2">
-                            <!-- Outer Pulsing Effect if Active -->
-                            <div id="lonceng-pulse" class="absolute w-28 h-28 bg-blue-100 rounded-full animate-ping opacity-75"></div>
-                            
-                            <!-- Main Circle Button -->
-                            <button id="btn-lonceng" onclick="handleLoncengClick()" class="relative w-28 h-28 bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-200 disabled:to-slate-300 disabled:shadow-none text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-500/30 active:scale-95 transition-all z-10">
-                                <div id="lonceng-inner-content" class="flex flex-col items-center justify-center">
-                                    <!-- Dynamic Bell / Checkmark Icon -->
-                                    <i id="lonceng-icon" data-lucide="bell" class="w-12 h-12 text-white"></i>
-                                    <span id="lonceng-done-text" class="hidden text-xs font-black tracking-widest text-slate-500 uppercase mt-0.5">DONE</span>
+                        <!-- Camera Tengah dengan Lonceng -->
+                        <div class="flex flex-col items-center justify-center py-2 relative">
+                            <button id="btn-bell-presensi" onclick="handleBellClick()" class="w-32 h-32 rounded-full bg-slate-100 flex flex-col items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 relative border-4 border-slate-200 overflow-hidden group">
+                                <!-- Animasi efek lingkaran jika aktif -->
+                                <div id="bell-ripple" class="absolute inset-0 bg-blue-500/10 rounded-full animate-ping hidden"></div>
+                                <div id="bell-icon-container" class="text-slate-500 relative z-10 flex flex-col items-center justify-center">
+                                    <i data-lucide="bell-off" class="w-12 h-12"></i>
                                 </div>
                             </button>
+                            <p id="bell-status-text" class="text-xs font-bold text-slate-500 mt-3 uppercase tracking-wider">Lonceng Terkunci</p>
                         </div>
 
-                        <!-- Status Label Under Lonceng -->
-                        <div class="space-y-1">
-                            <p id="lonceng-status-text" class="text-sm font-bold text-slate-800">Menghitung status...</p>
-                            <p id="lonceng-helper-text" class="text-[10px] text-slate-400 font-medium">Lonceng aktif pada rentang waktu absensi</p>
-                        </div>
-
-                        <!-- Divider -->
-                        <div class="w-full border-t border-slate-100 my-1"></div>
-
-                        <!-- Dual Kolom Jam Absensi Sejajar -->
-                        <div class="w-full grid grid-cols-2 gap-4 divide-x divide-slate-100 text-center">
-                            <!-- Masuk Kantor -->
-                            <div class="space-y-1">
-                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Masuk Kantor</p>
-                                <h4 class="text-base font-extrabold text-slate-700">06.30</h4>
-                                <div class="inline-flex flex-col pt-1">
-                                    <span class="text-[9px] text-slate-400 leading-none">Absen Masuk:</span>
-                                    <span id="txt-absen-masuk-time" class="text-xs font-black text-slate-800 mt-0.5">-</span>
+                        <!-- Sejajar Masuk Kantor dan Pulang Kantor -->
+                        <div class="grid grid-cols-2 gap-4 w-full pt-4 border-t border-slate-100">
+                            <!-- Sisi Kiri: Jam Masuk Kantor -->
+                            <div class="text-center space-y-1">
+                                <p class="text-sm font-extrabold text-slate-900 font-mono">06.30</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Masuk Kantor</p>
+                                <div class="bg-slate-50 py-2 px-2.5 rounded-xl border border-slate-100">
+                                    <p id="log-time-datang" class="text-xs font-extrabold text-slate-400">--:--</p>
                                 </div>
                             </div>
-                            <!-- Pulang Kantor -->
-                            <div class="space-y-1 pl-4">
-                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pulang Kantor</p>
-                                <h4 class="text-base font-extrabold text-slate-700">15.00</h4>
-                                <div class="inline-flex flex-col pt-1">
-                                    <span class="text-[9px] text-slate-400 leading-none">Absen Pulang:</span>
-                                    <span id="txt-absen-pulang-time" class="text-xs font-black text-slate-800 mt-0.5">-</span>
+                            
+                            <!-- Sisi Kanan: Jam Pulang Kantor -->
+                            <div class="text-center space-y-1 border-l border-slate-100">
+                                <p class="text-sm font-extrabold text-slate-900 font-mono">15.00</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pulang Kantor</p>
+                                <div class="bg-slate-50 py-2 px-2.5 rounded-xl border border-slate-100">
+                                    <p id="log-time-pulang" class="text-xs font-extrabold text-slate-400">--:--</p>
                                 </div>
                             </div>
                         </div>
@@ -254,6 +200,7 @@
 
                 <!-- SUB-PAGE: IZIN -->
                 <div id="guru-sub-izin" class="hidden space-y-4">
+                    <!-- SECTION: RIWAYAT IZIN GURU -->
                     <h3 class="font-bold text-slate-800 text-base mb-1">Riwayat Pengajuan Izin Anda</h3>
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
                         <div class="grid grid-cols-2 gap-3">
@@ -266,7 +213,7 @@
                                     <option value="3">April</option>
                                     <option value="4">Mei</option>
                                     <option value="5">Juni</option>
-                                    <option value="6" selected>Juli</option>
+                                    <option value="6">Juli</option>
                                     <option value="7">Agustus</option>
                                     <option value="8">September</option>
                                     <option value="9">Oktober</option>
@@ -283,7 +230,8 @@
                                 </select>
                             </div>
                         </div>
-                        <!-- SUB-TABS STATUS IZIN -->
+
+                        <!-- SUB-TABS STATUS IZIN UNTUK GURU -->
                         <div class="flex bg-slate-100 p-1 rounded-xl text-[11px] font-semibold my-1">
                             <button onclick="switchGuruIzinTab('Menunggu')" id="btn-tab-guru-iz-menunggu" class="flex-1 py-1.5 rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300">
                                 Menunggu
@@ -295,20 +243,24 @@
                                 Ditolak
                             </button>
                         </div>
+                        
                         <!-- List Riwayat Izin Terfilter -->
                         <div id="guru-riwayat-izin-list" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
                             <!-- Diisi via JS -->
                         </div>
                     </div>
 
+                    <!-- Pembatas visual yang bersih -->
                     <div class="border-t border-slate-100 my-2"></div>
 
                     <!-- FORM PENGAJUAN -->
                     <h3 class="font-bold text-slate-800 text-base mb-2">Form Pengajuan Izin / Dinas</h3>
-                    <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-4 shadow-sm">
+                    
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-4">
+                        <!-- Tipe Izin -->
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Jenis Pengajuan</label>
-                            <select id="izin-tipe" onchange="toggleIzinFormFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium">
+                            <select id="izin-tipe" onchange="toggleIzinFormFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 <option value="Terlambat">Izin Terlambat Datang</option>
                                 <option value="Pulang Cepat">Izin Pulang Cepat</option>
                                 <option value="Dinas Luar Full">Izin Dinas Luar Full</option>
@@ -316,10 +268,13 @@
                                 <option value="Masuk Dinas Luar">Masuk Kerja Baru Dinas Luar</option>
                             </select>
                         </div>
+
+                        <!-- Fleksibel Tanggal (Single/Range) -->
                         <div id="div-izin-tanggal-tunggal">
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Pilih Tanggal</label>
                             <input type="date" id="izin-tanggal" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
+
                         <div id="div-izin-tanggal-range" class="hidden grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Tanggal Mulai</label>
@@ -330,7 +285,9 @@
                                 <input type="date" id="izin-tgl-selesai" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
                         </div>
-                        <div id="div-izin-jam" class="grid grid-cols-2 gap-3">
+
+                        <!-- Jam Datang & Jam Pulang (Dinamis) -->
+                        <div id="div-izin-jam" class="grid gap-3">
                             <div id="wrapper-jam-datang">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Rencana Datang</label>
                                 <input type="time" id="izin-jam-datang" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -340,6 +297,7 @@
                                 <input type="time" id="izin-jam-pulang" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
                         </div>
+
                         <!-- Pencarian Alamat Dinas Luar (Map) -->
                         <div id="div-izin-map" class="hidden space-y-2">
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Lokasi Dinas Luar</label>
@@ -347,13 +305,18 @@
                                 <input type="text" id="map-search-input" placeholder="Tulis alamat tujuan dinas..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 <button type="button" onclick="searchAddress()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center gap-1.5"><i data-lucide="search" class="w-3.5 h-3.5"></i> Cari</button>
                             </div>
+                            <!-- Peta Kecil -->
                             <div id="izin-map-canvas" class="w-full h-44 rounded-xl border border-slate-200 overflow-hidden relative z-10"></div>
-                            <p id="izin-alamat-terpilih" class="text-[11px] text-blue-600 font-medium"></p>
+                            <p id="izin-alamat-terpilih" class="text-xs text-indigo-600 font-medium"></p>
                         </div>
+
+                        <!-- Alasan Izin -->
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Alasan Pengajuan</label>
                             <textarea id="izin-alasan" rows="3" placeholder="Sebutkan alasan atau deskripsi pengajuan izin..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
                         </div>
+
+                        <!-- Tombol Kirim -->
                         <button onclick="submitIzin()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition-all shadow-md shadow-blue-100 flex items-center justify-center gap-2">
                             <i data-lucide="send" class="w-4 h-4"></i> Kirim Pengajuan Izin
                         </button>
@@ -363,6 +326,8 @@
                 <!-- SUB-PAGE: REKAP -->
                 <div id="guru-sub-rekap" class="hidden space-y-4">
                     <h3 class="font-bold text-slate-800 text-base">Rekap Presensi Anda</h3>
+
+                    <!-- Filter Pilihan Periode -->
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -374,7 +339,7 @@
                                     <option value="3">April</option>
                                     <option value="4">Mei</option>
                                     <option value="5">Juni</option>
-                                    <option value="6" selected>Juli</option>
+                                    <option value="6">Juli</option>
                                     <option value="7">Agustus</option>
                                     <option value="8">September</option>
                                     <option value="9">Oktober</option>
@@ -391,32 +356,36 @@
                                 </select>
                             </div>
                         </div>
+
+                        <!-- Ringkasan Statistik -->
                         <div class="grid grid-cols-3 gap-2 text-center pt-2.5 border-t border-slate-100">
                             <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-100">
                                 <p class="text-[9px] text-emerald-600 font-bold uppercase tracking-wider">Hadir</p>
                                 <h4 id="rekap-stat-guru-hadir" class="text-sm font-extrabold text-emerald-700">0 Hari</h4>
                             </div>
-                            <div class="bg-amber-50 p-2 rounded-xl border border-amber-100">
-                                <p class="text-[9px] text-amber-600 font-bold uppercase tracking-wider">Izin</p>
-                                <h4 id="rekap-stat-guru-izin" class="text-sm font-extrabold text-amber-700">0 Hari</h4>
-                            </div>
                             <div class="bg-rose-50 p-2 rounded-xl border border-rose-100">
                                 <p class="text-[9px] text-rose-600 font-bold uppercase tracking-wider">Alpa</p>
                                 <h4 id="rekap-stat-guru-alpa" class="text-sm font-extrabold text-rose-700">0 Hari</h4>
                             </div>
+                            <div class="bg-amber-50 p-2 rounded-xl border border-amber-100">
+                                <p class="text-[9px] text-amber-600 font-bold uppercase tracking-wider">Telat</p>
+                                <h4 id="rekap-stat-guru-telat" class="text-sm font-extrabold text-amber-700">0 Menit</h4>
+                            </div>
                         </div>
                     </div>
-                    <!-- List Rekap Detail -->
+
+                    <!-- List Details Rekap Harian -->
                     <div id="guru-rekap-list" class="space-y-3">
-                        <!-- JS Dynamic Content -->
+                        <!-- Disisipkan via JS -->
                     </div>
                 </div>
 
                 <!-- SUB-PAGE: PROFIL -->
-                <div id="guru-sub-profil" class="hidden space-y-6">
+                <div id="guru-sub-profil" class="hidden space-y-4">
                     <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 inset-x-0 h-20 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-                        <!-- Profile Photo -->
+                        
+                        <!-- Upload Foto Individu -->
                         <div class="relative w-28 h-28 mx-auto mt-6 mb-4 z-10 group">
                             <img id="profil-photo-preview" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300" alt="Avatar Profil" class="w-28 h-28 rounded-full border-4 border-white object-cover shadow-md">
                             <label for="profil-photo-upload" class="absolute bottom-1 right-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full cursor-pointer shadow-md transition-transform active:scale-95">
@@ -424,73 +393,70 @@
                             </label>
                             <input type="file" id="profil-photo-upload" accept="image/*" class="hidden" onchange="uploadProfilePhoto(event)">
                         </div>
+
                         <h3 id="profil-name" class="font-bold text-slate-800 text-lg leading-tight">Nama Guru</h3>
                         <p id="profil-nip" class="text-sm text-slate-500 font-mono mt-1">NIP. -</p>
                     </div>
 
-                    <!-- KARTU INFORMASI JABATAN -->
+                    <!-- INFORMASI JABATAN -->
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 text-blue-600">
-                            <i data-lucide="briefcase" class="w-4 h-4"></i>
-                            <h4 class="text-xs font-bold uppercase tracking-wider">Informasi Jabatan</h4>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                            <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> Informasi Jabatan
+                        </h4>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-100/50">
                             <span class="text-xs text-slate-500 font-medium">Satuan Kerja</span>
                             <span id="profil-satuan-kerja" class="text-xs font-bold text-slate-800">Dinas Pendidikan</span>
                         </div>
-                        <div class="flex justify-between items-center py-1 border-t border-slate-50">
+                        <div class="flex justify-between items-center py-1 border-b border-slate-100/50">
                             <span class="text-xs text-slate-500 font-medium">Unit Kerja</span>
                             <span id="profil-unit-kerja" class="text-xs font-bold text-slate-800">SMAN 1</span>
                         </div>
-                        <div class="flex justify-between items-center py-1 border-t border-slate-50">
+                        <div class="flex justify-between items-center py-1 border-b border-slate-100/50">
                             <span class="text-xs text-slate-500 font-medium">Jabatan</span>
-                            <span id="profil-jabatan" class="text-xs font-bold text-slate-800">Guru Ahli Pertama</span>
+                            <span id="profil-jabatan" class="text-xs font-bold text-slate-800 font-medium">Guru Ahli Pertama</span>
                         </div>
-                        <div class="flex justify-between items-center py-1 border-t border-slate-50">
+                        <div class="flex justify-between items-center py-1">
                             <span class="text-xs text-slate-500 font-medium">Pangkat / Golongan</span>
-                            <span id="profil-pangkat" class="text-xs font-bold text-slate-800">IX</span>
+                            <span id="profil-golongan" class="text-xs font-bold text-slate-800">IX</span>
                         </div>
                     </div>
 
-                    <!-- KARTU ATASAN LANGSUNG -->
+                    <!-- ATASAN LANGSUNG -->
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 text-indigo-600">
-                            <i data-lucide="user-check" class="w-4 h-4"></i>
-                            <h4 class="text-xs font-bold uppercase tracking-wider">Atasan Langsung</h4>
-                        </div>
-                        <div>
-                            <p id="profil-atasan-nama" class="text-xs font-bold text-slate-800">Dwi Astuti, M.Pd</p>
-                            <p id="profil-atasan-jabatan" class="text-[10px] text-slate-500 font-semibold mt-0.5">Guru Ahli Madya / Kepala Sekolah SMAN 1</p>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                            <i data-lucide="user-check" class="w-3.5 h-3.5"></i> Atasan Langsung
+                        </h4>
+                        <div class="flex flex-col space-y-1">
+                            <span class="text-xs font-bold text-slate-800">Dwi Astuti, M.Pd</span>
+                            <span class="text-[11px] text-slate-500">Guru Ahli Madya / Kepala Sekolah SMAN 1</span>
                         </div>
                     </div>
 
-                    <!-- KARTU ALAMAT TEMPAT TINGGAL -->
+                    <!-- ALAMAT TEMPAT TINGGAL -->
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 text-emerald-600">
-                            <i data-lucide="map-pin" class="w-4 h-4"></i>
-                            <h4 class="text-xs font-bold uppercase tracking-wider">Alamat Tempat Tinggal</h4>
-                        </div>
-                        <p id="profil-alamat" class="text-xs text-slate-600 font-medium leading-relaxed">
-                            Jl. Raya Parung No. 12, Bogor, Jawa Barat
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Alamat Tempat Tinggal
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium">
+                            Jl. Raya Parung No. 12, Parung, Bogor, Jawa Barat
                         </p>
                     </div>
 
-                    <!-- KARTU KONFIGURASI PRESENSI -->
+                    <!-- KONFIGURASI PRESENSI -->
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 text-amber-600">
-                            <i data-lucide="clock" class="w-4 h-4"></i>
-                            <h4 class="text-xs font-bold uppercase tracking-wider">Konfigurasi Presensi</h4>
-                        </div>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                            <i data-lucide="settings" class="w-3.5 h-3.5"></i> Konfigurasi Presensi
+                        </h4>
                         <div class="flex justify-between items-center py-1">
                             <span class="text-xs text-slate-500 font-medium">Skema Kerja</span>
-                            <span id="profil-skema" class="text-xs font-bold text-slate-800">5 Hari Kerja (06.30)</span>
+                            <span class="text-xs font-bold text-emerald-600">5 Hari Kerja (06.30)</span>
                         </div>
                     </div>
                 </div>
 
             </div>
 
-            <!-- TAB BAR GURU -->
+            <!-- TAB BAR GURU (Navigation) -->
             <div class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200/80 px-6 py-2.5 flex justify-between items-center z-40">
                 <button onclick="switchGuruSubPage('beranda')" id="nav-guru-beranda" class="flex flex-col items-center justify-center gap-1 text-blue-600 font-semibold transition-all">
                     <i data-lucide="home" class="w-5 h-5"></i>
@@ -522,8 +488,8 @@
                         </div>
                         <div>
                             <p class="text-xs text-slate-300">Selamat bertugas,</p>
-                            <h2 id="admin-header-title" class="font-bold text-base leading-tight">Admin Kepegawaian</h2>
-                            <p class="text-[10px] text-slate-400">ID. ADM-2026-991</p>
+                            <h2 class="font-bold text-base leading-tight">Admin Kepegawaian</h2>
+                            <p class="text-[10px] text-slate-400">ID Kepegawaian</p>
                         </div>
                     </div>
                     <button onclick="logout()" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition-all">
@@ -535,24 +501,26 @@
             <!-- ADMIN MAIN VIEWPORT -->
             <div class="flex-1 overflow-y-auto px-4 py-5 no-scrollbar pb-24">
                 
-                <!-- SUB-PAGE: MONITORING -->
+                <!-- SUB-PAGE: ADMIN MONITORING ABSENSI -->
                 <div id="admin-sub-monitoring" class="space-y-5">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 text-base">Monitoring Presensi</h3>
-                        <span class="text-xs text-slate-500 font-semibold" id="admin-monitor-date">Rabu, 1 Juli 2026</span>
+                        <h3 class="font-bold text-slate-800 text-base">Monitoring Presensi Guru</h3>
+                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md font-semibold" id="admin-monitor-date">Hari Ini</span>
                     </div>
 
+                    <!-- Ringkasan Singkat -->
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-xl text-center shadow-sm">
+                        <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-xl text-center">
                             <span class="text-[10px] text-emerald-600 uppercase font-semibold">Sudah Absen</span>
                             <h4 id="count-sudah-absen" class="text-2xl font-extrabold text-emerald-700 mt-1">0</h4>
                         </div>
-                        <div class="bg-rose-50 border border-rose-100 p-3 rounded-xl text-center shadow-sm">
+                        <div class="bg-rose-50 border border-rose-100 p-3 rounded-xl text-center">
                             <span class="text-[10px] text-rose-600 uppercase font-semibold">Belum Absen</span>
-                            <h4 id="count-belum-absen" class="text-2xl font-extrabold text-rose-700 mt-1 font-mono">0</h4>
+                            <h4 id="count-belum-absen" class="text-2xl font-extrabold text-rose-700 mt-1">0</h4>
                         </div>
                     </div>
 
+                    <!-- Pencarian Nama/NIP Guru -->
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                             <i data-lucide="search" class="w-4 h-4"></i>
@@ -560,16 +528,74 @@
                         <input type="text" id="admin-search-guru" oninput="renderAdminMonitoring()" placeholder="Cari nama atau NIP guru..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                     </div>
 
+                    <!-- List Semua Status Guru -->
                     <div id="admin-monitoring-list" class="space-y-3">
-                        <!-- JS Dynamic Grid -->
+                        <!-- JS Render -->
                     </div>
                 </div>
 
-                <!-- SUB-PAGE: PERSETUJUAN IZIN ADMIN -->
+                <!-- SUB-PAGE: ADMIN PERSETUJUAN IZIN -->
                 <div id="admin-sub-izin" class="hidden space-y-4">
                     <h3 class="font-bold text-slate-800 text-base">Persetujuan Izin Guru</h3>
+                    
+                    <!-- Sub-Tabs filter izin untuk Admin -->
+                    <div class="flex bg-slate-100 p-1.5 rounded-xl text-xs font-semibold">
+                        <button onclick="switchAdminIzinTab('Menunggu')" id="btn-tab-iz-menunggu" class="flex-1 py-2 rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300">
+                            Menunggu
+                        </button>
+                        <button onclick="switchAdminIzinTab('Disetujui')" id="btn-tab-iz-disetujui" class="flex-1 py-2 rounded-lg text-slate-600 transition-all duration-300">
+                            Disetujui
+                        </button>
+                        <button onclick="switchAdminIzinTab('Ditolak')" id="btn-tab-iz-ditolak" class="flex-1 py-2 rounded-lg text-slate-600 transition-all duration-300">
+                            Ditolak
+                        </button>
+                    </div>
+
                     <div id="admin-izin-list" class="space-y-3">
-                        <!-- JS Dynamic Grid -->
+                        <!-- JS Render -->
+                    </div>
+                </div>
+
+                <!-- SUB-PAGE: ADMIN REKAPITULASI -->
+                <div id="admin-sub-rekap" class="hidden space-y-5">
+                    <h3 class="font-bold text-slate-800 text-base">Rekapitulasi Laporan</h3>
+                    
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-4">
+                        <!-- Rentang Rekap -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Rentang Laporan</label>
+                            <select id="admin-rekap-range" onchange="filterAdminRekap()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="hari">Hari Ini</option>
+                                <option value="minggu">Minggu Ini</option>
+                                <option value="bulan">Bulan Ini</option>
+                            </select>
+                        </div>
+
+                        <!-- Ringkasan Nilai Rekap -->
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
+                                <p class="text-[9px] text-emerald-600 font-medium uppercase">Hadir</p>
+                                <h4 id="rekap-stat-hadir" class="text-base font-bold text-emerald-700">0</h4>
+                            </div>
+                            <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-100">
+                                <p class="text-[9px] text-blue-600 font-medium uppercase">Izin/Dinas</p>
+                                <h4 id="rekap-stat-izin" class="text-base font-bold text-blue-700">0</h4>
+                            </div>
+                            <div class="bg-rose-50 p-2.5 rounded-xl border border-rose-100">
+                                <p class="text-[9px] text-rose-600 font-bold uppercase tracking-wider">Alpa</p>
+                                <h4 id="rekap-stat-alpa" class="text-base font-bold text-rose-700">0</h4>
+                            </div>
+                        </div>
+
+                        <!-- Ekspor Sheet Hint -->
+                        <div class="p-3 bg-yellow-50 border border-yellow-100 rounded-xl flex items-start gap-2.5">
+                            <i data-lucide="info" class="w-4 h-4 text-yellow-600 mt-0.5 shrink-0"></i>
+                            <p class="text-[11px] text-yellow-700 leading-normal">Seluruh data presensi ini tersimpan real-time di Google Spreadsheet Anda. Anda dapat mengunduh langsung dari sana untuk keperluan arsip fisik.</p>
+                        </div>
+                    </div>
+
+                    <div id="admin-rekap-guru-list" class="space-y-3">
+                        <!-- JS populated rekap per guru -->
                     </div>
                 </div>
 
@@ -577,886 +603,961 @@
 
             <!-- TAB BAR ADMIN -->
             <div class="absolute bottom-0 inset-x-0 bg-white border-t border-slate-200/80 px-6 py-2.5 flex justify-between items-center z-40">
-                <button onclick="switchAdminSubPage('monitoring')" id="nav-admin-monitoring" class="flex-1 flex flex-col items-center justify-center gap-1 text-blue-600 font-semibold transition-all">
-                    <i data-lucide="line-chart" class="w-5 h-5"></i>
+                <button onclick="switchAdminSubPage('monitoring')" id="nav-admin-monitoring" class="flex flex-col items-center justify-center gap-1 text-slate-800 font-semibold transition-all">
+                    <i data-lucide="eye" class="w-5 h-5"></i>
                     <span class="text-[10px]">Monitoring</span>
                 </button>
-                <button onclick="switchAdminSubPage('izin')" id="nav-admin-izin" class="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 transition-all relative">
-                    <i data-lucide="mailbox" class="w-5 h-5"></i>
-                    <span class="text-[10px]">Persetujuan</span>
-                    <span id="badge-admin-izin" class="hidden absolute top-0.5 right-1/3 bg-red-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white font-bold leading-none">0</span>
+                <button onclick="switchAdminSubPage('izin')" id="nav-admin-izin" class="flex flex-col items-center justify-center gap-1 text-slate-400 transition-all">
+                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                    <span class="text-[10px]">Izin</span>
+                </button>
+                <button onclick="switchAdminSubPage('rekap')" id="nav-admin-rekap" class="flex flex-col items-center justify-center gap-1 text-slate-400 transition-all">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                    <span class="text-[10px]">Rekap Laporan</span>
                 </button>
             </div>
         </div>
 
-        <!-- ================= CAMERA & MAP INTEGRATION MODAL ================= -->
-        <div id="camera-modal" class="hidden absolute inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex flex-col justify-between p-6">
-            <div class="flex justify-between items-center text-white mt-4">
-                <h3 class="font-bold text-sm tracking-wide uppercase" id="camera-modal-title">Ambil Foto Presensi</h3>
-                <button onclick="closeCameraModal()" class="p-2 bg-white/10 rounded-full hover:bg-white/20">
-                    <i data-lucide="x" class="w-5 h-5 text-white"></i>
-                </button>
-            </div>
+        <!-- ================= MODAL: CAMERA & PRESENSI ================= -->
+        <div id="modal-presensi" class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col justify-end">
+            <div class="bg-white rounded-t-[2.5rem] p-6 space-y-4 max-h-[90%] overflow-y-auto no-scrollbar">
+                <!-- Header Modal -->
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 id="presensi-modal-title" class="font-bold text-lg text-slate-900">Ambil Presensi Datang</h3>
+                        <p class="text-xs text-slate-500">Silakan ambil foto wajah and deteksi lokasi</p>
+                    </div>
+                    <button onclick="closeCameraModal()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-all">
+                        <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
+                    </button>
+                </div>
 
-            <!-- Camera Frame -->
-            <div class="relative w-full aspect-[3/4] bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center">
-                <video id="webcam" autoplay playsinline class="absolute inset-0 w-full h-full object-cover transform -scale-x-100"></video>
-                <canvas id="photo-canvas" class="hidden absolute inset-0 w-full h-full object-cover"></canvas>
-                
-                <!-- Overlay Face Guide -->
-                <div class="absolute inset-10 border-2 border-dashed border-white/50 rounded-full pointer-events-none flex items-center justify-center">
-                    <p class="text-[10px] text-white/70 font-semibold text-center select-none bg-black/40 px-3 py-1.5 rounded-full">Posisikan Wajah di Sini</p>
+                <!-- Live Camera Feed / Placeholder -->
+                <div class="relative w-full aspect-square max-w-sm mx-auto bg-slate-950 rounded-2xl overflow-hidden shadow-inner border border-slate-800 flex flex-col items-center justify-center">
+                    <!-- Simulasi Video Stream -->
+                    <div id="camera-simulation" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+                        <i data-lucide="camera" class="w-12 h-12 text-slate-600 mb-2 animate-pulse"></i>
+                        <span class="text-xs text-slate-400">Menghubungkan kamera perangkat...</span>
+                    </div>
+                    <!-- Captured Image View -->
+                    <img id="captured-photo-preview" class="hidden absolute inset-0 w-full h-full object-cover z-20">
+                    
+                    <!-- Overlay Grid alignment -->
+                    <div class="absolute inset-8 border border-white/20 rounded-full pointer-events-none z-10"></div>
+                </div>
+
+                <!-- GPS & Location Card -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+                    <div class="p-2.5 bg-blue-50 rounded-xl text-blue-600 shrink-0">
+                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs font-semibold text-slate-800">Titik Lokasi Terdeteksi</p>
+                        <p id="presensi-gps-coords" class="text-[10px] text-slate-500 font-mono">Latitude: Loading... | Longitude: Loading...</p>
+                        <p id="presensi-gps-address" class="text-xs text-slate-600 leading-snug">Sedang melacak alamat presensi Anda...</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="space-y-2">
+                    <button id="btn-capture-photo" onclick="captureSimulatedPhoto()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition-all shadow-md shadow-blue-100 flex items-center justify-center gap-2">
+                        <i data-lucide="aperture" class="w-5 h-5"></i> Ambil Foto Wajah
+                    </button>
+                    <button id="btn-submit-presensi" onclick="submitPresensi()" disabled class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Kirim Presensi Sekarang
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Control Actions -->
-            <div class="space-y-4 mb-4">
-                <p id="gps-status" class="text-xs text-center text-emerald-400 font-semibold flex items-center justify-center gap-1">
-                    <i data-lucide="map-pin" class="w-3.5 h-3.5 animate-pulse"></i> Melacak koordinat GPS...
-                </p>
-                <button onclick="takePictureAndPresensi()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all text-sm">
-                    <i data-lucide="aperture" class="w-5 h-5"></i> Ambil Foto & Absen
-                </button>
+        <!-- ================= MODAL: PREVIEW FOTO ADMIN (LIGHTBOX) ================= -->
+        <div id="modal-preview-foto" class="hidden absolute inset-0 bg-slate-900/90 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl relative">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div>
+                        <span class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Bukti Foto Presensi</span>
+                        <h4 id="preview-foto-title" class="font-bold text-slate-900 text-sm">Nama Guru</h4>
+                    </div>
+                    <button onclick="closePreviewFotoModal()" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full transition-all">
+                        <i data-lucide="x" class="w-4.5 h-4.5 text-slate-600"></i>
+                    </button>
+                </div>
+                <div class="aspect-square bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
+                    <img id="preview-foto-img" src="" class="w-full h-full object-cover">
+                </div>
+                <div class="pt-1 text-center">
+                    <p class="text-xs text-slate-400">Waktu pengambilan terverifikasi sistem</p>
+                </div>
             </div>
         </div>
 
     </div>
 
-    <!-- SCRIPT UTAMA -->
+    <!-- Script Utama Aplikasi (Tunggal & Terkonsolidasi) -->
     <script>
-        // === INSTANCE VARIABEL & MOCK DATABASE ===
-        let currentRole = 'guru'; // 'guru' atau 'admin'
-        let currentSubPageGuru = 'beranda';
-        let currentSubPageAdmin = 'monitoring';
-        let activeGuruIzinTab = 'Menunggu';
-        let currentPresensiType = 'datang'; // 'datang' atau 'pulang'
-        let activeUser = null;
-        let mapInstance = null;
-        let mapMarker = null;
-        let streamInstance = null;
-        let selectedCoordinates = null;
-        let selectedAddress = "Kantor SMAN 1";
-        let simulationTimeOverride = "real"; // "real" atau string waktu "HH:MM"
+        // ================= CONFIG: TEMPELKAN URL APPS SCRIPT ANDA DI SINI =================
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3jCgE6vPpxX8QvX7Xl-z5uR9b-H1GZ1w_example/exec"; 
 
-        // Inisialisasi Database Guru Terperinci (Lokal Fallback)
-        const defaultTeachers = [
-            { 
-                nip: "19850101", 
-                name: "Budi Santoso, S.Pd", 
-                role: "guru", 
-                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150", 
-                satuanKerja: "Dinas Pendidikan", 
-                unitKerja: "SMAN 1", 
-                jabatan: "Guru Ahli Pertama", 
-                pangkat: "IX",
-                atasanNama: "Dwi Astuti, M.Pd",
-                atasanJabatan: "Guru Ahli Madya / Kepala Sekolah SMAN 1",
-                alamat: "Jl. Raya Parung No. 12, Bogor, Jawa Barat",
-                skema: "5 Hari Kerja (06.30)"
-            },
-            { 
-                nip: "19900202", 
-                name: "Siti Aminah, M.Pd", 
-                role: "guru", 
-                avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150", 
-                satuanKerja: "Dinas Pendidikan", 
-                unitKerja: "SMAN 1", 
-                jabatan: "Guru Ahli Pertama", 
-                pangkat: "IX",
-                atasanNama: "Dwi Astuti, M.Pd",
-                atasanJabatan: "Guru Ahli Madya / Kepala Sekolah SMAN 1",
-                alamat: "Jl. Margonda Raya No. 45, Depok, Jawa Barat",
-                skema: "5 Hari Kerja (06.30)"
-            }
+        // --- 1. STATE MEMORI APLIKASI ---
+        let teachers = [];      
+        let attendanceDb = [];  
+        let izinDb = [];        
+
+        // Daftar Libur Nasional Utama (Tanggal Merah) Indonesia Tahun 2026
+        const holidays2026 = [
+            "2026-01-01", "2026-01-18", "2026-02-17", "2026-03-19", "2026-03-20", "2026-03-21",
+            "2026-04-03", "2026-05-01", "2026-05-14", "2026-05-27", "2026-06-01", "2026-06-15",
+            "2026-07-06", "2026-08-17", "2026-09-15", "2026-12-25"
         ];
 
-        // Memuat database lokal jika belum ada
-        if (!localStorage.getItem('teachers_db')) {
-            localStorage.setItem('teachers_db', JSON.stringify(defaultTeachers));
-        }
-        if (!localStorage.getItem('attendance_db')) {
-            localStorage.setItem('attendance_db', JSON.stringify([]));
-        }
-        if (!localStorage.getItem('izin_db')) {
-            localStorage.setItem('izin_db', JSON.stringify([]));
-        }
+        // --- 2. GLOBAL STATE UTAMA NAVIGASI & PRESENSI ---
+        let currentRole = 'guru'; 
+        let currentUser = null;
+        let activeGuruSubPage = 'beranda';
+        let activeAdminSubPage = 'monitoring';
+        let activeAdminIzinTab = 'Menunggu'; 
+        let activeGuruIzinTab = 'Menunggu';  
+        
+        let currentPresensiType = ''; 
+        let currentCapturedPhoto = '';
+        let currentGeoLocation = { lat: -6.200000, lng: 106.816666, address: "SMK Negeri Jakarta Pusat" };
 
-        // === LOGIKA ROUTING HALAMAN ===
-        function showPage(pageId) {
-            const pages = ['page-login', 'page-guru', 'page-admin'];
-            pages.forEach(p => {
-                const element = document.getElementById(p);
-                if (element) {
-                    if (p === pageId) element.classList.remove('hidden');
-                    else element.classList.add('hidden');
+        let mapInstance = null;
+        let mapMarker = null;
+
+        // --- 3. UTILITY FUNGSIONAL UTAMA (DIDEKLARASIKAN DI AWAL AGAR BEBAS DARI REFERENCE ERROR) ---
+        
+        // Detak Jam Real-time harian
+        function startLiveClock() {
+            setInterval(() => {
+                const now = new Date();
+                const clock = document.getElementById('live-clock');
+                if (clock) {
+                    clock.textContent = now.toTimeString().split(' ')[0];
                 }
-            });
+            }, 1000);
         }
 
-        // === NORMALIZATION LAYER ===
-        function normalizeTeacher(t) {
-            if (!t) return null;
-            return {
-                NIP: String(t.NIP || t.nip || ""),
-                Name: t.Name || t.name || "",
-                Role: t.Role || t.role || "guru",
-                Avatar: t.Avatar || t.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
-                SatuanKerja: t.SatuanKerja || t.satuanKerja || "Dinas Pendidikan",
-                UnitKerja: t.UnitKerja || t.unitKerja || "SMAN 1",
-                Jabatan: t.Jabatan || t.jabatan || "Guru Ahli Pertama",
-                Pangkat: t.Pangkat || t.pangkat || "IX",
-                AtasanNama: t.AtasanNama || t.atasanNama || "Dwi Astuti, M.Pd",
-                AtasanJabatan: t.AtasanJabatan || t.atasanJabatan || "Guru Ahli Madya / Kepala Sekolah SMAN 1",
-                Alamat: t.Alamat || t.alamat || "Jl. Raya Parung No. 12, Bogor, Jawa Barat",
-                Skema: t.Skema || t.skema || "5 Hari Kerja (06.30)"
-            };
-        }
-
-        function normalizeAttendance(a) {
-            if (!a) return null;
-            return {
-                Date: a.Date || a.date || "",
-                NIP: String(a.NIP || a.nip || ""),
-                Name: a.Name || a.name || "",
-                TimeIn: a.TimeIn || a.timeIn || "",
-                TimeOut: a.TimeOut || a.timeOut || "",
-                Status: a.Status || a.status || "",
-                SelfieIn: a.SelfieIn || a.selfieIn || "",
-                SelfieOut: a.SelfieOut || a.selfieOut || ""
-            };
-        }
-
-        function normalizeIzin(iz) {
-            if (!iz) return null;
-            return {
-                ID: iz.ID || iz.id || "",
-                NIP: String(iz.NIP || iz.nip || ""),
-                TeacherName: iz.TeacherName || iz.teacherName || "",
-                TeacherAvatar: iz.TeacherAvatar || iz.teacherAvatar || "",
-                Tipe: iz.Tipe || iz.tipe || "",
-                Tanggal: iz.Tanggal || iz.tanggal || "",
-                JamDatang: iz.JamDatang || iz.jamDatang || "",
-                JamPulang: iz.JamPulang || iz.jamPulang || "",
-                Lokasi: iz.Lokasi || iz.lokasi || "",
-                Alasan: iz.Alasan || iz.alasan || "",
-                Status: iz.Status || iz.status || "",
-                TglPengajuan: iz.TglPengajuan || iz.tglPengajuan || ""
-            };
-        }
-
-        const getTeachers = () => {
-            const raw = JSON.parse(localStorage.getItem('teachers_db')) || [];
-            return raw.map(normalizeTeacher);
-        };
-        const getAttendance = () => {
-            const raw = JSON.parse(localStorage.getItem('attendance_db')) || [];
-            return raw.map(normalizeAttendance);
-        };
-        const getIzin = () => {
-            const raw = JSON.parse(localStorage.getItem('izin_db')) || [];
-            return raw.map(normalizeIzin);
-        };
-
-        const saveAttendance = (data) => {
-            localStorage.setItem('attendance_db', JSON.stringify(data));
-        };
-        const saveIzin = (data) => {
-            localStorage.setItem('izin_db', JSON.stringify(data));
-        };
-
-        // === WINDOW ONLOAD INITIALIZATION ===
-        window.onload = async function() {
-            lucide.createIcons();
-            
-            const storedApiUrl = localStorage.getItem('backend_api_url');
-            if (storedApiUrl) {
-                document.getElementById('backend-api-url').value = storedApiUrl;
-                syncWithBackend();
+        const cleanNip = (val) => {
+            if (val === undefined || val === null) return "";
+            let s = val.toString().trim();
+            if (s.includes('e') || s.includes('E')) {
+                try { s = Number(s).toFixed(0); } catch(e) {}
             }
-
-            const activeSession = localStorage.getItem('active_session_user');
-            if (activeSession) {
-                activeUser = normalizeTeacher(JSON.parse(activeSession));
-                if (activeUser.Role === 'admin') {
-                    showPage('page-admin');
-                    renderAdminDashboard();
-                } else {
-                    showPage('page-guru');
-                    renderGuruDashboard();
-                }
-            } else {
-                showPage('page-login');
-            }
-
-            setInterval(updateClock, 1000);
-            updateClock();
-            
-            toggleIzinFormFields();
+            if (s.includes('.')) { s = s.split('.')[0]; }
+            return s.replace(/[^0-9]/g, '');
         };
 
-        // === API INTEGRASI GOOGLE APPS SCRIPT ===
-        function toggleApiSettings() {
-            const panel = document.getElementById('api-settings-panel');
-            panel.classList.toggle('hidden');
-        }
-
-        async function saveApiUrl() {
-            const urlInput = document.getElementById('backend-api-url').value.trim();
-            if (!urlInput) {
-                showToast("Tautan API tidak boleh kosong!");
-                return;
-            }
-
-            const loading = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-            loadingText.innerText = "Menghubungkan ke Google Sheets...";
-            loading.classList.remove('hidden');
-
-            try {
-                localStorage.setItem('backend_api_url', urlInput);
-                const success = await syncWithBackend();
-                loading.classList.add('hidden');
-                
-                if (success) {
-                    showToast("Database Google Sheets berhasil disinkronkan!");
-                    if (activeUser) {
-                        if (activeUser.Role === 'admin') renderAdminDashboard();
-                        else renderGuruDashboard();
-                    }
-                } else {
-                    showToast("Koneksi gagal. Periksa kembali Web App URL Anda.");
-                }
-            } catch (err) {
-                loading.classList.add('hidden');
-                showToast("Gagal terhubung ke API backend.");
-            }
-        }
-
-        function clearApiUrl() {
-            localStorage.removeItem('backend_api_url');
-            document.getElementById('backend-api-url').value = "";
-            showToast("Konfigurasi API dihapus. Menggunakan mode luring.");
-            localStorage.setItem('teachers_db', JSON.stringify(defaultTeachers));
-        }
-
-        async function syncWithBackend() {
-            const apiUrl = localStorage.getItem('backend_api_url');
-            if (!apiUrl) return false;
-
-            try {
-                const response = await fetch(`${apiUrl}?action=getAllData`);
-                const result = await response.json();
-                
-                if (result && !result.error) {
-                    if (result.teachers && result.teachers.length > 0) {
-                        localStorage.setItem('teachers_db', JSON.stringify(result.teachers));
-                    }
-                    if (result.attendance) {
-                        localStorage.setItem('attendance_db', JSON.stringify(result.attendance));
-                    }
-                    if (result.izin) {
-                        localStorage.setItem('izin_db', JSON.stringify(result.izin));
-                    }
-                    return true;
-                }
-            } catch (err) {
-                console.warn("Koneksi backend gagal. Menjalankan fallback data lokal.", err);
+        function isNipMatch(nip1, nip2) {
+            const clean1 = cleanNip(nip1);
+            const clean2 = cleanNip(nip2);
+            if (!clean1 || !clean2) return false;
+            if (clean1 === clean2) return true;
+            if (clean1.length >= 15 && clean2.length >= 15) {
+                return clean1.substring(0, 15) === clean2.substring(0, 15);
             }
             return false;
         }
 
-        async function sendPostAction(action, payload) {
-            const apiUrl = localStorage.getItem('backend_api_url');
-            if (!apiUrl) return { success: true, offline: true };
-
+        const cleanDate = (val) => {
+            if (!val) return "";
+            let s = val.toString().trim();
+            if (s.includes('T')) { return s.split('T')[0]; }
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) { return s; }
             try {
-                const response = await fetch(apiUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "text/plain"
-                    },
-                    body: JSON.stringify({ action: action, ...payload })
-                });
-                const responseText = await response.text();
-                return JSON.parse(responseText);
-            } catch (err) {
-                console.error("Gagal menyinkronkan perubahan ke Google Sheets: ", err);
-                return { success: false, error: err.toString() };
-            }
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById('toast-notif');
-            const toastMsg = document.getElementById('toast-message');
-            toastMsg.innerText = message;
-            toast.style.opacity = '1';
-            toast.style.pointerEvents = 'auto';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.pointerEvents = 'none';
-            }, 3000);
-        }
-
-        function handleTimeSimulationChange() {
-            simulationTimeOverride = document.getElementById('time-simulator').value;
-            showToast(`Waktu simulasi dialihkan ke: ${simulationTimeOverride === 'real' ? 'Real-Time Sistem' : simulationTimeOverride}`);
-            updateClock();
-            if (activeUser && activeUser.Role === 'guru') {
-                updateGuruTodayStatus();
-            }
-        }
-
-        function getCurrentTimeObject() {
-            if (simulationTimeOverride !== "real") {
-                const parts = simulationTimeOverride.split(":");
-                return {
-                    hours: parseInt(parts[0]),
-                    minutes: parseInt(parts[1]),
-                    formatted: `${simulationTimeOverride}:00`
-                };
-            }
-            const now = new Date();
-            return {
-                hours: now.getHours(),
-                minutes: now.getMinutes(),
-                formatted: now.toTimeString().split(' ')[0]
-            };
-        }
-
-        function updateClock() {
-            const now = new Date();
-            const timeObj = getCurrentTimeObject();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const dateStr = now.toLocaleDateString('id-ID', options);
-
-            const liveClock = document.getElementById('live-clock');
-            const liveDate = document.getElementById('live-date');
-            
-            if (liveClock) {
-                if (simulationTimeOverride !== "real") {
-                    liveClock.innerHTML = `${timeObj.formatted} <span class="text-[9px] bg-amber-400 text-amber-950 px-1 rounded animate-pulse absolute -mt-4 ml-1">SIM</span>`;
-                } else {
-                    liveClock.innerText = timeObj.formatted;
+                const d = new Date(val);
+                if (!isNaN(d.getTime())) {
+                    let month = '' + (d.getMonth() + 1);
+                    let day = '' + d.getDate();
+                    const year = d.getFullYear();
+                    if (month.length < 2) month = '0' + month;
+                    if (day.length < 2) day = '0' + day;
+                    return [year, month, day].join('-');
                 }
-            }
-            if (liveDate) liveDate.innerText = dateStr;
-            
-            const adminDate = document.getElementById('admin-monitor-date');
-            if (adminDate) adminDate.innerText = dateStr;
+            } catch(e) {}
+            return s;
+        };
 
-            if (activeUser && activeUser.Role === 'guru' && currentSubPageGuru === 'beranda') {
-                evaluateLoncengState();
-            }
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Radius Bumi dalam meter
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; 
         }
 
-        function evaluateLoncengState() {
-            const btnLonceng = document.getElementById('btn-lonceng');
-            const loncengInner = document.getElementById('lonceng-inner-content');
-            const statusText = document.getElementById('lonceng-status-text');
-            const helperText = document.getElementById('lonceng-helper-text');
-            const pulse = document.getElementById('lonceng-pulse');
+        // Helper Penghitung Menit Keterlambatan (Batas 06:30)
+        function calculateLateMinutes(checkInStr) {
+            if (!checkInStr) return 0;
+            const [h, m] = checkInStr.split(':').map(Number);
+            const checkInMins = h * 60 + m;
+            const limitMins = 6 * 60 + 30; // 06:30
+            if (checkInMins > limitMins) {
+                return checkInMins - limitMins;
+            }
+            return 0;
+        }
 
-            if (!btnLonceng || !activeUser) return;
-
-            const timeObj = getCurrentTimeObject();
-            const attendance = getAttendance();
-            const todayKey = getTodayKey();
-            const myLog = attendance.find(log => log.NIP === activeUser.NIP && log.Date === todayKey);
-
-            const txtAbsenMasuk = document.getElementById('txt-absen-masuk-time');
-            const txtAbsenPulang = document.getElementById('txt-absen-pulang-time');
-            if (txtAbsenMasuk) txtAbsenMasuk.innerText = (myLog && myLog.TimeIn) ? myLog.TimeIn : "-";
-            if (txtAbsenPulang) txtAbsenPulang.innerText = (myLog && myLog.TimeOut) ? myLog.TimeOut : "-";
-
-            const minutesSinceMidnight = (timeObj.hours * 60) + timeObj.minutes;
-            const openMasukMin = 5 * 60; // 05.00
-            const openPulangMin = 15 * 60; // 15.00
-            const closePulangMin = (23 * 60) + 55; // 23.55
-
-            let state = "locked"; 
-            let msg = "Lonceng Terkunci";
-            let hlp = "Di luar jam operasional presensi";
-
-            if (minutesSinceMidnight >= openMasukMin && minutesSinceMidnight < openPulangMin) {
-                if (myLog && myLog.TimeIn) {
-                    state = "done";
-                    msg = "Masuk Kantor Selesai";
-                    hlp = "Menunggu jadwal pulang (15.00)";
-                } else {
-                    state = "masuk";
-                    msg = "Presensi Masuk Kantor";
-                    hlp = "Sentuh lonceng untuk ambil foto wajah";
-                }
-            } else if (minutesSinceMidnight >= openPulangMin && minutesSinceMidnight <= closePulangMin) {
-                if (!myLog || !myLog.TimeIn) {
-                    state = "locked";
-                    msg = "Presensi Terkunci";
-                    hlp = "Anda melewatkan absen masuk pagi";
-                } else if (myLog.TimeOut) {
-                    state = "done";
-                    msg = "Sudah Presensi Pulang";
-                    hlp = "Presensi hari ini selesai. Selamat beristirahat!";
-                } else {
-                    state = "pulang";
-                    msg = "Presensi Pulang Kantor";
-                    hlp = "Sentuh lonceng untuk konfirmasi pulang";
-                }
-            } else {
-                state = "locked";
-                msg = "Lonceng Terkunci";
-                hlp = "Sistem presensi ditutup (Buka jam 05.00)";
+        // --- 4. SINKRONISASI DATABASE GOOGLE SHEETS & LOCAL DATA ---
+        async function fetchDataFromSpreadsheet() {
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("example")) {
+                console.warn("Aplikasi berjalan dalam mode simulasi offline.");
+                setupSimulativeLocalData(); 
+                return;
             }
 
-            if (state === "done") {
-                btnLonceng.disabled = true;
-                pulse.classList.add('hidden');
-                loncengInner.innerHTML = `
-                    <div class="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center text-white mb-0.5 shadow-md shadow-emerald-200">
-                        <i data-lucide="check" class="w-8 h-8"></i>
-                    </div>
-                    <span class="text-xs font-black tracking-widest text-emerald-600 uppercase">DONE</span>
-                `;
-                statusText.innerText = "Sudah Presensi";
-                statusText.className = "text-sm font-black text-emerald-600";
-                helperText.innerText = hlp;
-            } else if (state === "locked") {
-                btnLonceng.disabled = true;
-                pulse.classList.add('hidden');
-                loncengInner.innerHTML = `
-                    <i data-lucide="bell-off" class="w-12 h-12 text-slate-400"></i>
-                    <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-1">LOCK</span>
-                `;
-                statusText.innerText = msg;
-                statusText.className = "text-sm font-bold text-slate-400";
-                helperText.innerText = hlp;
-            } else {
-                btnLonceng.disabled = false;
-                pulse.classList.remove('hidden');
+            toggleLoading(true);
+            try {
+                const response = await fetch(APPS_SCRIPT_URL);
+                if (!response.ok) throw new Error("Gagal mengambil data.");
                 
-                loncengInner.innerHTML = `
-                    <i data-lucide="bell" class="w-12 h-12 text-white animate-bounce"></i>
-                    <span class="text-[10px] font-black text-white tracking-widest uppercase mt-1">${state === 'masuk' ? 'MASUK' : 'PULANG'}</span>
-                `;
-                statusText.innerText = msg;
-                statusText.className = "text-sm font-extrabold text-blue-600 animate-pulse";
-                helperText.innerText = hlp;
+                const data = await response.json();
+                
+                if (data.guru && data.guru.length > 0) {
+                    teachers = data.guru;
+                }
+                
+                if (data.absensi) {
+                    attendanceDb = data.absensi.map((a, index) => ({
+                        id: 'att-' + index,
+                        nip: a["NIP"] ? cleanNip(a["NIP"]) : "",
+                        tanggal: a["Tanggal"] ? cleanDate(a["Tanggal"]) : "",
+                        jamDatang: a["Jam Datang"] || "",
+                        jamPulang: a["Jam Pulang"] || "",
+                        status: a["Status"] || "Hadir",
+                        fotoDatang: a["Foto Datang"] || "",
+                        lat: parseFloat(a["Latitude"]) || 0,
+                        lng: parseFloat(a["Longitude"]) || 0,
+                        alamat: a["Alamat Presensi"] || ""
+                    }));
+                }
+
+                if (data.izin) {
+                    izinDb = data.izin.map((i, index) => ({
+                        id: i["Timestamp"] ? 'iz-' + cleanNip(i["NIP"]) + '-' + cleanDate(i["Tanggal Mulai"]) : 'iz-' + index,
+                        nip: i["NIP"] ? cleanNip(i["NIP"]) : "",
+                        tipe: i["Jenis Izin"] || "",
+                        tglMulai: i["Tanggal Mulai"] ? cleanDate(i["Tanggal Mulai"]) : "",
+                        tglSelesai: i["Tanggal Selesai"] ? cleanDate(i["Tanggal Selesai"]) : "",
+                        jamDatang: i["Rencana Datang"] || "",
+                        jamPulang: i["Rencana Pulang"] || "",
+                        alamat: i["Alamat Dinas"] || "",
+                        alasan: i["Alasan"] || "",
+                        status: i["Status Persetujuan"] || "Menunggu"
+                    }));
+                }
+
+                console.log("Database berhasil disinkronisasi!", { teachers, attendanceDb, izinDb });
+                
+                if (currentUser) {
+                    if (currentUser.role === 'admin') {
+                        renderAdminMonitoring();
+                        renderAdminIzin();
+                        filterAdminRekap();
+                    } else {
+                        renderLivePresensi();
+                        renderGuruRekap();
+                        renderGuruRiwayatIzin();
+                        updateBellState();
+                    }
+                }
+            } catch (err) {
+                console.error("Kesalahan sinkronisasi: ", err);
+                setupSimulativeLocalData();
+            } finally {
+                toggleLoading(false);
             }
-            
-            currentPresensiType = (state === "pulang") ? "pulang" : "datang";
-            lucide.createIcons();
         }
 
+        function setupSimulativeLocalData() {
+            teachers = [
+                { nip: "198804122015032001", nama: "Siti Rahma, S.Pd", role: "guru", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150", email: "sitirahma@sekolah.sch.id", password: "" },
+                { nip: "199105232018021002", nama: "Budi Santoso, M.Pd", role: "guru", avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150", email: "budisantoso@sekolah.sch.id", password: "" },
+                { nip: "199407152020032003", nama: "Laras Kirana, S.Pd", role: "guru", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150", email: "laraskirana@sekolah.sch.id", password: "" },
+                { nip: "197508212003051001", nama: "Admin Kepegawaian", role: "admin", avatar: "", email: "admin@sekolah.sch.id", password: "197508212003051001" }
+            ];
+            
+            attendanceDb = [
+                { id: "att-1", nip: "198804122015032001", tanggal: "2026-06-30", jamDatang: "06:15", jamPulang: "15:05", status: "Hadir", fotoDatang: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150", lat: -6.208760, lng: 106.845599, alamat: "SMAN 1" }
+            ];
+
+            izinDb = [
+                { id: "iz-1", nip: "198804122015032001", tipe: "Dinas Luar Full", tglMulai: "2026-06-25", tglSelesai: "2026-06-25", jamDatang: "", jamPulang: "", alamat: "Dinas Pendidikan DKI Jakarta", alasan: "Rapat koordinasi kurikulum.", status: "Disetujui" }
+            ];
+        }
+
+        // --- 5. LOGIKA LOGIN & SESSION HANDLING (DIOPTIMALKAN UNTUK MENCEGAH STUCK) ---
         function switchLoginRole(role) {
             currentRole = role;
             const btnGuru = document.getElementById('btn-tab-guru');
             const btnAdmin = document.getElementById('btn-tab-admin');
-            const lblNip = document.getElementById('lbl-nip');
-            const lblPass = document.getElementById('lbl-pass');
-            const inputNip = document.getElementById('login-nip');
-            const inputPass = document.getElementById('login-pass');
-
-            inputNip.value = "";
-            inputPass.value = "";
+            const passField = document.getElementById('login-pass');
+            const nipField = document.getElementById('login-nip');
 
             if (role === 'guru') {
                 btnGuru.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300";
                 btnAdmin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-600 transition-all duration-300";
-                lblNip.innerText = "NIP GURU";
-                lblPass.innerText = "PASSWORD (Gunakan NIP)";
-                inputNip.placeholder = "Masukkan NIP Anda";
-                inputPass.placeholder = "Masukkan NIP Anda sebagai Password";
+                passField.placeholder = "Masukkan NIP sebagai Password";
+                nipField.placeholder = "Masukkan NIP Guru Anda";
+                nipField.value = "";
+                passField.value = "";
             } else {
                 btnAdmin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white text-slate-800 shadow-sm transition-all duration-300";
                 btnGuru.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-600 transition-all duration-300";
-                lblNip.innerText = "ID ADMIN";
-                lblPass.innerText = "PASSWORD";
-                inputNip.placeholder = "Masukkan ID Admin";
-                inputPass.placeholder = "Masukkan Password Admin";
+                passField.placeholder = "Password Admin (NIP)";
+                nipField.placeholder = "Masukkan NIP Admin";
+                nipField.value = "";
+                passField.value = "";
             }
-            lucide.createIcons();
         }
 
         async function handleLogin() {
-            const nip = document.getElementById('login-nip').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
-            const loading = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
+            const nipInput = cleanNip(document.getElementById('login-nip').value);
+            const passInput = cleanNip(document.getElementById('login-pass').value);
 
-            if (!nip || !pass) {
-                showToast("ID Pengguna dan Password wajib diisi!");
+            if (!nipInput || !passInput) {
+                alertCustom("Form Kosong", "NIP dan Password harus diisi untuk dapat masuk.");
                 return;
             }
 
-            loadingText.innerText = "Menghubungkan ke database...";
-            loading.classList.remove('hidden');
+            if (currentRole === 'admin') {
+                if (nipInput === "197508212003051001" && passInput === "197508212003051001") {
+                    currentUser = {
+                        nip: "197508212003051001",
+                        nama: "Admin Kepegawaian",
+                        role: "admin",
+                        avatar: ""
+                    };
+                    loginSuccessRedirect();
+                    return;
+                } else {
+                    alertCustom("Login Gagal", "NIP atau Password Admin salah.");
+                    return;
+                }
+            }
 
-            await syncWithBackend();
-
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                const teachers = getTeachers();
-
-                if (currentRole === 'guru') {
-                    const teacher = teachers.find(t => String(t.NIP) === nip && t.Role === 'guru');
-                    
-                    if (teacher && nip === pass) {
-                        activeUser = teacher;
-                        localStorage.setItem('active_session_user', JSON.stringify(activeUser));
-                        showPage('page-guru');
-                        renderGuruDashboard();
-                        showToast("Berhasil login sebagai Guru!");
-                    } else {
-                        showToast("NIP atau password salah! (Sama dengan NIP)");
+            // AMBIL DATA HANYA JIKA MEMORI KOSONG DAN LINK BUKAN DUMMY (Mencegah Stuck)
+            if (teachers.length === 0) {
+                if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
+                    try {
+                        await fetchDataFromSpreadsheet();
+                    } catch (e) {
+                        console.warn("Gagal memuat otomatis saat login, menggunakan data lokal.");
                     }
                 } else {
-                    const adminFromSheet = teachers.find(t => String(t.NIP) === nip && t.Role === 'admin');
-                    
-                    if (adminFromSheet && nip === pass) {
-                        activeUser = adminFromSheet;
-                        localStorage.setItem('active_session_user', JSON.stringify(activeUser));
-                        showPage('page-admin');
-                        renderAdminDashboard();
-                        showToast(`Selamat datang, Admin ${activeUser.Name}!`);
-                    } else if (nip === 'admin' && pass === 'admin') {
-                        const adminUser = normalizeTeacher({ nip: 'admin', name: 'Admin Kepegawaian', role: 'admin' });
-                        activeUser = adminUser;
-                        localStorage.setItem('active_session_user', JSON.stringify(adminUser));
-                        showPage('page-admin');
-                        renderAdminDashboard();
-                        showToast("Berhasil masuk Dashboard Admin (Akun Bawaan)!");
-                    } else {
-                        showToast("ID Admin atau Password salah!");
-                    }
+                    setupSimulativeLocalData();
                 }
-            }, 800);
+            }
+
+            const user = teachers.find(t => {
+                return isNipMatch(t.nip, nipInput);
+            });
+
+            if (user) {
+                const userNip = nipInput; 
+                if (passInput === userNip) {
+                    currentUser = {
+                        nip: userNip,
+                        nama: user.nama || user.namaLengkap || "Guru Baru",
+                        role: "guru",
+                        avatar: user.foto || user.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+                        jabatan: user.jabatan || "Guru Pengajar",
+                        statusPegawai: user.status || "Aktif"
+                    };
+                    loginSuccessRedirect();
+                    return;
+                }
+            }
+            
+            alertCustom("Login Gagal", "NIP atau Password salah! Pastikan Anda memasukkan NIP Anda dengan benar pada kedua kolom (NIP & Password).");
+        }
+
+        function loginSuccessRedirect() {
+            document.getElementById('page-login').classList.add('hidden');
+            
+            if (currentUser.role === 'admin') {
+                document.getElementById('page-admin').classList.remove('hidden');
+                switchAdminSubPage('monitoring');
+            } else {
+                document.getElementById('page-guru').classList.remove('hidden');
+                updateGuruHeader();
+                switchGuruSubPage('beranda');
+            }
         }
 
         function logout() {
-            const loading = document.getElementById('loading-overlay');
-            loading.classList.remove('hidden');
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                localStorage.removeItem('active_session_user');
-                activeUser = null;
-                showPage('page-login');
-                showToast("Anda telah keluar dari sistem.");
-            }, 800);
+            currentUser = null;
+            document.getElementById('page-guru').classList.add('hidden');
+            document.getElementById('page-admin').classList.add('hidden');
+            document.getElementById('page-login').classList.remove('hidden');
+            switchLoginRole('guru');
         }
 
-        function getTodayKey() {
-            const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        }
-
-        function renderGuruDashboard() {
-            if (!activeUser) return;
-
-            document.getElementById('guru-header-name').innerText = activeUser.Name;
-            document.getElementById('guru-header-nip').innerText = "NIP. " + activeUser.NIP;
-            document.getElementById('guru-header-avatar').src = activeUser.Avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
-
-            document.getElementById('profil-name').innerText = activeUser.Name;
-            document.getElementById('profil-nip').innerText = "NIP. " + activeUser.NIP;
-            document.getElementById('profil-satuan-kerja').innerText = activeUser.SatuanKerja || "Dinas Pendidikan";
-            document.getElementById('profil-unit-kerja').innerText = activeUser.UnitKerja || "SMAN 1";
-            document.getElementById('profil-jabatan').innerText = activeUser.Jabatan || "Guru Ahli Pertama";
-            document.getElementById('profil-pangkat').innerText = activeUser.Pangkat || "IX";
+        // --- 6. GURU HEADER & SUB-PAGE HANDLING ---
+        function updateGuruHeader() {
+            document.getElementById('guru-header-name').textContent = currentUser.nama;
+            document.getElementById('guru-header-nip').textContent = "NIP. " + currentUser.nip;
+            document.getElementById('guru-header-avatar').src = currentUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
             
-            document.getElementById('profil-atasan-nama').innerText = activeUser.AtasanNama || "Dwi Astuti, M.Pd";
-            document.getElementById('profil-atasan-jabatan').innerText = activeUser.AtasanJabatan || "Guru Ahli Madya / Kepala Sekolah SMAN 1";
+            document.getElementById('profil-name').textContent = currentUser.nama;
+            document.getElementById('profil-nip').textContent = "NIP. " + currentUser.nip;
+            document.getElementById('profil-photo-preview').src = currentUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
             
-            document.getElementById('profil-alamat').innerText = activeUser.Alamat || "Jl. Raya Parung No. 12, Bogor, Jawa Barat";
-            document.getElementById('profil-skema').innerText = activeUser.Skema || "5 Hari Kerja (06.30)";
-            document.getElementById('profil-photo-preview').src = activeUser.Avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
+            const profJabatan = document.getElementById('profil-jabatan');
+            if (profJabatan) {
+                profJabatan.textContent = currentUser.jabatan || "Guru Ahli Pertama";
+            }
 
             updateGuruTodayStatus();
-            switchGuruSubPage(currentSubPageGuru);
         }
 
         function updateGuruTodayStatus() {
-            const attendance = getAttendance();
-            const todayKey = getTodayKey();
-            const myLog = attendance.find(log => String(log.NIP) === String(activeUser.NIP) && log.Date === todayKey);
+            const today = getTodayDateString();
+            const record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
             const statusLabel = document.getElementById('guru-today-status');
 
-            if (myLog) {
-                if (myLog.Status === 'Dinas') {
-                    statusLabel.className = "text-lg font-bold text-amber-500";
-                    statusLabel.innerText = "Dinas Luar";
-                } else if (myLog.TimeOut) {
+            if (record) {
+                if (record.jamDatang && record.jamPulang) {
+                    statusLabel.textContent = "Selesai Kerja";
                     statusLabel.className = "text-lg font-bold text-emerald-400";
-                    statusLabel.innerText = `Sudah Pulang (${myLog.TimeOut})`;
-                } else {
-                    statusLabel.className = "text-lg font-bold text-indigo-400";
-                    statusLabel.innerText = `Hadir Datang (${myLog.TimeIn})`;
+                } else if (record.jamDatang) {
+                    statusLabel.textContent = "Sedang Bekerja";
+                    statusLabel.className = "text-lg font-bold text-amber-400";
                 }
             } else {
+                statusLabel.textContent = "Belum Presensi";
                 statusLabel.className = "text-lg font-bold text-rose-300";
-                statusLabel.innerText = "Belum Absen";
             }
-
-            evaluateLoncengState();
         }
 
-        function switchGuruSubPage(subPage) {
-            currentSubPageGuru = subPage;
-            const subs = ['guru-sub-beranda', 'guru-sub-izin', 'guru-sub-rekap', 'guru-sub-profil'];
+        function switchGuruSubPage(sub) {
+            activeGuruSubPage = sub;
+            const subs = ['beranda', 'izin', 'rekap', 'profil'];
             subs.forEach(s => {
-                const element = document.getElementById(s);
-                if (element) {
-                    if (s === `guru-sub-${subPage}`) element.classList.remove('hidden');
-                    else element.classList.add('hidden');
-                }
+                document.getElementById(`guru-sub-${s}`).classList.add('hidden');
+                document.getElementById(`nav-guru-${s}`).className = "flex flex-col items-center justify-center gap-1 text-slate-400 transition-all";
             });
 
-            const tabs = ['beranda', 'izin', 'rekap', 'profil'];
-            tabs.forEach(t => {
-                const nav = document.getElementById(`nav-guru-${t}`);
-                if (nav) {
-                    if (t === subPage) {
-                        nav.className = "flex flex-col items-center justify-center gap-1 text-blue-600 font-bold transition-all";
-                    } else {
-                        nav.className = "flex flex-col items-center justify-center gap-1 text-slate-400 transition-all";
-                    }
-                }
-            });
+            document.getElementById(`guru-sub-${sub}`).classList.remove('hidden');
+            document.getElementById(`nav-guru-${sub}`).className = "flex flex-col items-center justify-center gap-1 text-blue-600 font-semibold transition-all";
 
-            if (subPage === 'beranda') {
-                renderLivePresensiRekan();
-                evaluateLoncengState();
-            } else if (subPage === 'izin') {
-                renderGuruRiwayatIzin();
-                setTimeout(initLeafletMap, 300);
-            } else if (subPage === 'rekap') {
+            if (sub === 'beranda') {
+                renderLivePresensi();
+                updateBellState();
+            } else if (sub === 'izin') {
+                toggleIzinFormFields();
+                initLeafletMap();
+                renderGuruRiwayatIzin(); 
+            } else if (sub === 'rekap') {
                 renderGuruRekap();
             }
         }
 
-        function renderLivePresensiRekan() {
-            const teachers = getTeachers().filter(t => String(t.NIP) !== String(activeUser.NIP) && t.Role === 'guru');
-            const attendance = getAttendance();
-            const todayKey = getTodayKey();
-            const listContainer = document.getElementById('live-presensi-list');
-            listContainer.innerHTML = "";
+        // --- 7. SIKLUS OPERASIONAL BELL PRESENSI ---
+        function updateBellState() {
+            const bellBtn = document.getElementById('btn-bell-presensi');
+            const bellIconContainer = document.getElementById('bell-icon-container');
+            const bellStatusText = document.getElementById('bell-status-text');
+            const logDatang = document.getElementById('log-time-datang');
+            const logPulang = document.getElementById('log-time-pulang');
+            const bellRipple = document.getElementById('bell-ripple');
 
-            teachers.forEach(teacher => {
-                const log = attendance.find(a => String(a.NIP) === String(teacher.NIP) && a.Date === todayKey);
-                let statusText = `<span class="text-xs text-rose-500 font-bold bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">Belum Presensi</span>`;
+            if (!bellBtn || !currentUser) return;
+
+            const today = getTodayDateString();
+            const record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
+
+            // Tampilkan jam presensi datang/pulang tercatat
+            if (record) {
+                logDatang.textContent = record.jamDatang ? record.jamDatang : '--:--';
+                logDatang.className = record.jamDatang ? "text-xs font-extrabold text-emerald-600" : "text-xs font-extrabold text-slate-400";
                 
-                if (log) {
-                    if (log.Status === 'Dinas') {
-                        statusText = `<span class="text-xs text-amber-600 font-bold bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Dinas Luar</span>`;
-                    } else if (log.TimeOut) {
-                        statusText = `<span class="text-xs text-blue-600 font-bold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Pulang: ${log.TimeOut}</span>`;
+                logPulang.textContent = record.jamPulang ? record.jamPulang : '--:--';
+                logPulang.className = record.jamPulang ? "text-xs font-extrabold text-indigo-600" : "text-xs font-extrabold text-slate-400";
+            } else {
+                logDatang.textContent = '--:--';
+                logDatang.className = "text-xs font-extrabold text-slate-400";
+                logPulang.textContent = '--:--';
+                logPulang.className = "text-xs font-extrabold text-slate-400";
+            }
+
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const timeVal = hour * 60 + minute;
+
+            const startDatang = 5 * 60;        // 05:00
+            const startPulang = 15 * 60;       // 15:00
+            const endPulang = 23 * 60 + 55;    // 23:55
+
+            if (record && record.jamDatang && record.jamPulang) {
+                bellBtn.disabled = true;
+                bellBtn.className = "w-28 h-28 rounded-full bg-emerald-100 border-4 border-emerald-500 flex items-center justify-center relative shadow-lg cursor-not-allowed";
+                bellIconContainer.innerHTML = `<span class="text-emerald-700 font-extrabold text-sm tracking-wider">DONE</span>`;
+                bellStatusText.textContent = "Sudah Presensi";
+                bellStatusText.className = "text-xs font-bold text-emerald-600 mt-3";
+                if(bellRipple) bellRipple.classList.add('hidden');
+            } 
+            else if (timeVal >= startPulang && timeVal <= endPulang) {
+                if (record && record.jamPulang) {
+                    bellBtn.disabled = true;
+                    bellBtn.className = "w-28 h-28 rounded-full bg-emerald-100 border-4 border-emerald-500 flex items-center justify-center relative shadow-lg cursor-not-allowed";
+                    bellIconContainer.innerHTML = `<span class="text-emerald-700 font-extrabold text-sm tracking-wider">DONE</span>`;
+                    bellStatusText.textContent = "Sudah Presensi";
+                    bellStatusText.className = "text-xs font-bold text-emerald-600 mt-3";
+                    if(bellRipple) bellRipple.classList.add('hidden');
+                } else {
+                    bellBtn.disabled = false;
+                    bellBtn.className = "w-28 h-28 rounded-full bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center relative shadow-lg hover:scale-105 transition-all";
+                    bellIconContainer.innerHTML = `<i data-lucide="bell" class="w-12 h-12 text-white animate-bounce"></i>`;
+                    bellStatusText.textContent = "Ketuk untuk Presensi Pulang";
+                    bellStatusText.className = "text-xs font-bold text-red-600 mt-3 animate-pulse";
+                    if(bellRipple) bellRipple.classList.remove('hidden');
+                }
+            } 
+            else if (timeVal >= startDatang && timeVal < startPulang) {
+                if (record && record.jamDatang) {
+                    bellBtn.disabled = true;
+                    bellBtn.className = "w-28 h-28 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center relative shadow-md cursor-not-allowed";
+                    bellIconContainer.innerHTML = `<i data-lucide="lock" class="w-12 h-12 text-slate-400"></i>`;
+                    bellStatusText.textContent = "Terkunci s.d 15:00";
+                    bellStatusText.className = "text-xs font-bold text-slate-400 mt-3";
+                    if(bellRipple) bellRipple.classList.add('hidden');
+                } else {
+                    bellBtn.disabled = false;
+                    bellBtn.className = "w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center relative shadow-lg hover:scale-105 transition-all";
+                    bellIconContainer.innerHTML = `<i data-lucide="bell" class="w-12 h-12 text-white animate-bounce"></i>`;
+                    bellStatusText.textContent = "Ketuk untuk Presensi Datang";
+                    bellStatusText.className = "text-xs font-bold text-emerald-600 mt-3 animate-pulse";
+                    if(bellRipple) bellRipple.classList.remove('hidden');
+                }
+            } 
+            else {
+                bellBtn.disabled = true;
+                bellBtn.className = "w-28 h-28 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center relative shadow-md cursor-not-allowed";
+                bellIconContainer.innerHTML = `<i data-lucide="bell-off" class="w-12 h-12 text-slate-400"></i>`;
+                bellStatusText.textContent = "Presensi Ditutup";
+                bellStatusText.className = "text-xs font-bold text-slate-400 mt-3";
+                if(bellRipple) bellRipple.classList.add('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        function handleBellClick() {
+            const now = new Date();
+            const hour = now.getHours();
+            const timeVal = hour * 60 + now.getMinutes();
+
+            const startDatang = 5 * 60;
+            const startPulang = 15 * 60;
+            const endPulang = 23 * 60 + 55;
+
+            let type = '';
+            if (timeVal >= startPulang && timeVal <= endPulang) {
+                type = 'pulang';
+            } else if (timeVal >= startDatang && timeVal < startPulang) {
+                type = 'datang';
+            }
+
+            if (type) {
+                openCameraModal(type);
+            }
+        }
+
+        const initDistanceTracking = () => {
+            const distLabel = document.getElementById('live-distance');
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const distance = calculateDistance(lat, lng, -6.208760, 106.845599);
+                        if (distLabel) {
+                            distLabel.textContent = `Jarak: ${distance.toFixed(0)}m`;
+                        }
+                    },
+                    (error) => {
+                        if (distLabel) {
+                            distLabel.textContent = "Jarak: -- m";
+                        }
+                    }
+                );
+            }
+        };
+
+        // --- 8. PROSES INPUT PRESENSI ---
+        function openCameraModal(type) {
+            currentPresensiType = type;
+            document.getElementById('presensi-modal-title').textContent = type === 'datang' ? 'Presensi Jam Datang' : 'Presensi Jam Pulang';
+            
+            currentCapturedPhoto = '';
+            document.getElementById('captured-photo-preview').classList.add('hidden');
+            document.getElementById('btn-submit-presensi').disabled = true;
+            document.getElementById('camera-simulation').classList.remove('hidden');
+
+            document.getElementById('modal-presensi').classList.remove('hidden');
+
+            detectLocation();
+        }
+
+        function closeCameraModal() {
+            document.getElementById('modal-presensi').classList.add('hidden');
+        }
+
+        function detectLocation() {
+            const gpsLabel = document.getElementById('presensi-gps-coords');
+            const addrLabel = document.getElementById('presensi-gps-address');
+            const distLabel = document.getElementById('live-distance');
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        currentGeoLocation.lat = lat;
+                        currentGeoLocation.lng = lng;
+                        gpsLabel.textContent = `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
+                        
+                        const distance = calculateDistance(lat, lng, -6.208760, 106.845599);
+                        distLabel.textContent = `Jarak: ${distance.toFixed(0)}m`;
+                        addrLabel.textContent = `Lokasi terverifikasi GPS SMAN 1. Jarak: ${distance.toFixed(0)}m.`;
+                    },
+                    (error) => {
+                        currentGeoLocation.lat = -6.208760;
+                        currentGeoLocation.lng = 106.845599;
+                        gpsLabel.textContent = `Lat: -6.208760 | Lng: 106.845599 (Default)`;
+                        distLabel.textContent = `Jarak: 15m`;
+                        addrLabel.textContent = "Akses GPS ditolak, menggunakan fallback lokasi SMAN 1.";
+                    }
+                );
+            }
+        }
+
+        function captureSimulatedPhoto() {
+            currentCapturedPhoto = currentUser.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400";
+            const preview = document.getElementById('captured-photo-preview');
+            preview.src = currentCapturedPhoto;
+            preview.classList.remove('hidden');
+            document.getElementById('camera-simulation').classList.add('hidden');
+            document.getElementById('btn-submit-presensi').disabled = false;
+        }
+
+        async function submitPresensi() {
+            const today = getTodayDateString();
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+
+            let record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
+
+            if (currentPresensiType === 'datang' && record) {
+                alertCustom("Sudah Absen", "Anda sudah mengisi absen datang hari ini.");
+                closeCameraModal();
+                return;
+            }
+            if (currentPresensiType === 'pulang' && record && record.jamPulang) {
+                alertCustom("Sudah Absen", "Anda sudah mengisi absen pulang hari ini.");
+                closeCameraModal();
+                return;
+            }
+
+            const postData = {
+                action: "presensi",
+                nip: currentUser.nip,
+                tanggal: today,
+                jamDatang: currentPresensiType === 'datang' ? timeStr : (record ? record.jamDatang : ""),
+                jamPulang: currentPresensiType === 'pulang' ? timeStr : "",
+                status: 'Hadir',
+                fotoDatang: currentCapturedPhoto,
+                lat: currentGeoLocation.lat,
+                lng: currentGeoLocation.lng,
+                alamat: currentGeoLocation.address
+            };
+
+            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
+                toggleLoading(true);
+                try {
+                    const res = await fetch(APPS_SCRIPT_URL, {
+                        method: "POST",
+                        body: JSON.stringify(postData)
+                    });
+                    const resJson = await res.json();
+                    if (resJson.status === "success") {
+                        await fetchDataFromSpreadsheet();
+                        alertCustom("Sukses Absen", `Kehadiran berhasil dicatat langsung di Google Sheets!`);
                     } else {
-                        statusText = `<span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Datang: ${log.TimeIn}</span>`;
+                        throw new Error(resJson.message);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alertCustom("Gagal Sinkron", "Gagal menyimpan ke Google Sheets, menggunakan data lokal.");
+                    savePresensiLocally(postData, today, timeStr);
+                } finally {
+                    toggleLoading(false);
+                }
+            } else {
+                savePresensiLocally(postData, today, timeStr);
+            }
+
+            closeCameraModal();
+        }
+
+        function savePresensiLocally(postData, today, timeStr) {
+            let record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
+            if (currentPresensiType === 'datang') {
+                attendanceDb.push({
+                    id: 'att-' + Date.now(),
+                    ...postData
+                });
+            } else if (record) {
+                record.jamPulang = timeStr;
+            }
+            updateGuruTodayStatus();
+            renderLivePresensi();
+            renderGuruRekap();
+        }
+
+        // --- 10. REKAN GURU LIVE PRESENSI (Beranda) ---
+        function renderLivePresensi() {
+            const container = document.getElementById('live-presensi-list');
+            container.innerHTML = '';
+
+            const today = getTodayDateString();
+            const activeGurus = teachers.filter(t => t.role === 'guru' || !isNipMatch(t.nip, "197508212003051001"));
+            
+            if (activeGurus.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Belum ada data guru terdaftar di database.</p>`;
+                return;
+            }
+
+            activeGurus.forEach(guru => {
+                const record = attendanceDb.find(a => isNipMatch(a.nip, guru.nip) && a.tanggal === today);
+                
+                let badgeHtml = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-rose-50 text-rose-600 border border-rose-100">Belum Datang</span>`;
+                let timeInfo = ``;
+
+                if (record) {
+                    if (record.jamDatang && record.jamPulang) {
+                        badgeHtml = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100">Selesai Tugas</span>`;
+                        timeInfo = `<p class="text-xs text-slate-500">Masuk: <span class="font-semibold text-slate-800">${record.jamDatang}</span> | Pulang: <span class="font-semibold text-slate-800">${record.jamPulang}</span></p>`;
+                    } else if (record.jamDatang) {
+                        badgeHtml = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-amber-50 text-amber-600 border border-amber-100">Di Sekolah</span>`;
+                        timeInfo = `<p class="text-xs text-slate-500">Masuk sejak <span class="font-semibold text-slate-800">${record.jamDatang}</span></p>`;
                     }
                 }
 
                 const itemHtml = `
-                    <div class="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm hover:scale-[1.01] transition-transform">
-                        <div class="flex items-center gap-3">
-                            <img src="${teacher.Avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Ava" class="w-10 h-10 rounded-full object-cover">
-                            <div>
-                                <h5 class="font-bold text-slate-800 text-xs">${teacher.Name}</h5>
-                                <p class="text-[9px] text-slate-400 font-semibold">${teacher.Jabatan || 'Guru'}</p>
-                            </div>
+                    <div class="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3 shadow-sm hover:border-slate-200 transition-all">
+                        <img src="${guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="${guru.nama}" class="w-10 h-10 rounded-full object-cover">
+                        <div class="flex-1 min-w-0">
+                            <h5 class="text-sm font-bold text-slate-800 truncate">${guru.nama || 'Guru Baru'}</h5>
+                            ${timeInfo ? timeInfo : `<p class="text-xs text-slate-400">Menunggu kehadiran guru</p>`}
                         </div>
-                        <div>${statusText}</div>
+                        <div>
+                            ${badgeHtml}
+                        </div>
                     </div>
                 `;
-                listContainer.insertAdjacentHTML('beforeend', itemHtml);
+                container.innerHTML += itemHtml;
             });
+        }
+
+        // --- 11. REKAP INDIVIDU GURU (Dengan Filter Periode & Analitik Presisi) ---
+        function renderGuruRekap() {
+            const container = document.getElementById('guru-rekap-list');
+            container.innerHTML = '';
+
+            const filterBulan = parseInt(document.getElementById('rekap-filter-bulan').value);
+            const filterTahun = parseInt(document.getElementById('rekap-filter-tahun').value);
+
+            const daysInMonth = new Date(filterTahun, filterBulan + 1, 0).getDate();
+            const today = new Date();
+
+            let statHadir = 0;
+            let statAlpa = 0;
+            let statTelatMinutes = 0;
+
+            const cardsData = [];
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(filterTahun, filterBulan, day);
+                
+                if (currentDate > today) { continue; }
+
+                const dayOfWeek = currentDate.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+
+                let monthStr = '' + (filterBulan + 1);
+                let dayStr = '' + day;
+                if (monthStr.length < 2) monthStr = '0' + monthStr;
+                if (dayStr.length < 2) dayStr = '0' + day;
+                const dateKeyStr = [filterTahun, monthStr, dayStr].join('-');
+
+                if (filterTahun === 2026 && holidays2026.includes(dateKeyStr)) { continue; }
+
+                const record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === dateKeyStr);
+
+                const approvedIzin = izinDb.find(i => {
+                    if (!isNipMatch(i.nip, currentUser.nip) || i.status !== "Disetujui") return false;
+                    return dateKeyStr >= i.tglMulai && dateKeyStr <= i.tglSelesai;
+                });
+
+                let statusBadge = '';
+                let detailsText = '';
+
+                if (record) {
+                    statHadir++; 
+                    const lateMins = calculateLateMinutes(record.jamDatang);
+                    
+                    if (lateMins > 0) {
+                        statTelatMinutes += lateMins;
+                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-600 border border-amber-100">Telat (${lateMins}m)</span>`;
+                    } else {
+                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-600 border border-emerald-100">Hadir</span>`;
+                    }
+
+                    detailsText = `
+                        <div class="grid grid-cols-2 gap-2 text-center text-xs mt-2.5">
+                            <div class="bg-slate-50 p-1.5 rounded-lg">
+                                <span class="text-[9px] text-slate-400 uppercase font-semibold">Masuk</span>
+                                <p class="font-bold text-slate-800">${record.jamDatang || '--:--'}</p>
+                            </div>
+                            <div class="bg-slate-50 p-1.5 rounded-lg">
+                                <span class="text-[9px] text-slate-400 uppercase font-semibold">Pulang</span>
+                                <p class="font-bold text-slate-800">${record.jamPulang || 'Belum Absen'}</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (approvedIzin) {
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-50 text-blue-600 border border-blue-100">${approvedIzin.tipe}</span>`;
+                    detailsText = `
+                        <div class="mt-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <strong>Alasan:</strong> "${approvedIzin.alasan}"
+                        </div>
+                    `;
+                } else {
+                    statAlpa++;
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-600 border border-rose-100">Alpa</span>`;
+                    detailsText = `
+                        <p class="text-xs text-rose-400/90 mt-1 font-medium">Tidak ada riwayat presensi masuk & pulang.</p>
+                    `;
+                }
+
+                cardsData.push({
+                    dateLabel: formatReadableDate(currentDate),
+                    badge: statusBadge,
+                    details: detailsText,
+                    timestamp: currentDate.getTime()
+                });
+            }
+
+            document.getElementById('rekap-stat-guru-hadir').textContent = `${statHadir} Hari`;
+            document.getElementById('rekap-stat-guru-alpa').textContent = `${statAlpa} Hari`;
+            document.getElementById('rekap-stat-guru-telat').textContent = `${statTelatMinutes} Menit`;
+
+            if (cardsData.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <i data-lucide="calendar" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+                        <p class="text-xs text-slate-500">Tidak ada hari kerja pada periode yang dipilih.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            cardsData.sort((a, b) => b.timestamp - a.timestamp);
+
+            cardsData.forEach(card => {
+                const itemHtml = `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-1">
+                            <span class="text-xs font-bold text-slate-800">${card.dateLabel}</span>
+                            ${card.badge}
+                        </div>
+                        ${card.details}
+                    </div>
+                `;
+                container.innerHTML += itemHtml;
+            });
+
             lucide.createIcons();
         }
 
-        function toggleIzinFormFields() {
-            const tipe = document.getElementById('izin-tipe').value;
-            const singleDateDiv = document.getElementById('div-izin-tanggal-tunggal');
-            const rangeDateDiv = document.getElementById('div-izin-tanggal-range');
-            const mapDiv = document.getElementById('div-izin-map');
-            const jamDatangWrap = document.getElementById('wrapper-jam-datang');
-            const jamPulangWrap = document.getElementById('wrapper-jam-pulang');
-
-            if (singleDateDiv) singleDateDiv.classList.add('hidden');
-            if (rangeDateDiv) rangeDateDiv.classList.add('hidden');
-            if (mapDiv) mapDiv.classList.add('hidden');
-            if (jamDatangWrap) jamDatangWrap.classList.remove('hidden');
-            if (jamPulangWrap) jamPulangWrap.classList.remove('hidden');
-
-            if (tipe === 'Dinas Luar Full') {
-                if (rangeDateDiv) rangeDateDiv.classList.remove('hidden');
-                if (jamDatangWrap) jamDatangWrap.classList.add('hidden');
-                if (jamPulangWrap) jamPulangWrap.classList.add('hidden');
-                if (mapDiv) mapDiv.classList.remove('hidden');
-                setTimeout(initLeafletMap, 200);
-            } else if (tipe === 'Dinas Luar Masuk' || tipe === 'Masuk Dinas Luar') {
-                if (singleDateDiv) singleDateDiv.classList.remove('hidden');
-                if (mapDiv) mapDiv.classList.remove('hidden');
-                setTimeout(initLeafletMap, 200);
-            } else if (tipe === 'Terlambat') {
-                if (singleDateDiv) singleDateDiv.classList.remove('hidden');
-                if (jamPulangWrap) jamPulangWrap.classList.add('hidden');
-            } else if (tipe === 'Pulang Cepat') {
-                if (singleDateDiv) singleDateDiv.classList.remove('hidden');
-                if (jamDatangWrap) jamDatangWrap.classList.add('hidden');
-            }
-        }
-
-        function initLeafletMap() {
-            const tipe = document.getElementById('izin-tipe').value;
-            if (!tipe.includes('Dinas')) return;
-
-            const container = document.getElementById('izin-map-canvas');
+        // --- 12. RIWAYAT PENGAJUAN IZIN INDIVIDU GURU ---
+        function renderGuruRiwayatIzin() {
+            const container = document.getElementById('guru-riwayat-izin-list');
             if (!container) return;
+            container.innerHTML = '';
 
-            if (mapInstance) {
-                mapInstance.remove();
-                mapInstance = null;
-            }
+            const filterBulan = parseInt(document.getElementById('riwayat-izin-bulan').value);
+            const filterTahun = parseInt(document.getElementById('riwayat-izin-tahun').value);
 
-            const lat = -6.425218;
-            const lng = 106.726521;
-            selectedCoordinates = { lat, lng };
-
-            mapInstance = L.map('izin-map-canvas').setView([lat, lng], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(mapInstance);
-
-            mapMarker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
-            
-            mapMarker.on('dragend', function (e) {
-                const pos = mapMarker.getLatLng();
-                selectedCoordinates = { lat: pos.lat, lng: pos.lng };
-                reverseGeocode(pos.lat, pos.lng);
+            const myIzin = izinDb.filter(i => {
+                if (!isNipMatch(i.nip, currentUser.nip)) return false;
+                
+                const dateParts = i.tglMulai.split('-');
+                if (dateParts.length < 3) return false;
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]) - 1; 
+                
+                const statusMatch = i.status === activeGuruIzinTab;
+                return year === filterTahun && month === filterBulan && statusMatch;
             });
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const myLat = position.coords.latitude;
-                    const myLng = position.coords.longitude;
-                    selectedCoordinates = { lat: myLat, lng: myLng };
-                    mapInstance.setView([myLat, myLng], 15);
-                    mapMarker.setLatLng([myLat, myLng]);
-                    reverseGeocode(myLat, myLng);
-                }, () => {
-                    reverseGeocode(lat, lng);
-                });
-            } else {
-                reverseGeocode(lat, lng);
-            }
-        }
-
-        function reverseGeocode(lat, lng) {
-            document.getElementById('izin-alamat-terpilih').innerText = `Mendapatkan alamat GPS...`;
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                .then(res => res.json())
-                .then(data => {
-                    selectedAddress = data.display_name || `Alamat terpilih (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
-                    document.getElementById('izin-alamat-terpilih').innerText = `📌 Lokasi: ${selectedAddress}`;
-                })
-                .catch(() => {
-                    selectedAddress = `Kawasan Koordinat (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-                    document.getElementById('izin-alamat-terpilih').innerText = `📌 Lokasi: ${selectedAddress}`;
-                });
-        }
-
-        function searchAddress() {
-            const query = document.getElementById('map-search-input').value.trim();
-            if (!query) {
-                showToast("Tulis alamat pencarian!");
+            if (myIzin.length === 0) {
+                let emptyMessage = `Belum ada riwayat pengajuan dengan status ${activeGuruIzinTab.toLowerCase()} pada periode ini.`;
+                container.innerHTML = `
+                    <div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-100">
+                        <i data-lucide="file-clock" class="w-8 h-8 text-slate-300 mx-auto mb-1.5"></i>
+                        <p class="text-[11px] text-slate-400 p-2 leading-relaxed">${emptyMessage}</p>
+                    </div>
+                `;
+                lucide.createIcons();
                 return;
             }
 
-            document.getElementById('izin-alamat-terpilih').innerText = `Mencari lokasi...`;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const lat = parseFloat(data[0].lat);
-                        const lon = parseFloat(data[0].lon);
-                        selectedCoordinates = { lat, lng: lon };
-                        selectedAddress = data[0].display_name;
+            myIzin.sort((a, b) => new Date(b.tglMulai) - new Date(a.tglMulai));
 
-                        mapInstance.setView([lat, lon], 15);
-                        mapMarker.setLatLng([lat, lon]);
-                        document.getElementById('izin-alamat-terpilih').innerText = `📌 Lokasi: ${selectedAddress}`;
-                    } else {
-                        showToast("Lokasi tidak ditemukan!");
-                        document.getElementById('izin-alamat-terpilih').innerText = "";
-                    }
-                })
-                .catch(() => {
-                    showToast("Gagal melakukan pencarian alamat.");
-                });
-        }
-
-        async function submitIzin() {
-            const tipe = document.getElementById('izin-tipe').value;
-            const tglTunggal = document.getElementById('izin-tanggal').value;
-            const tglMulai = document.getElementById('izin-tgl-mulai').value;
-            const tglSelesai = document.getElementById('izin-tgl-selesai').value;
-            const jamDatang = document.getElementById('izin-jam-datang').value;
-            const jamPulang = document.getElementById('izin-jam-pulang').value;
-            const alasan = document.getElementById('izin-alasan').value.trim();
-
-            if (!alasan) {
-                showToast("Sebutkan alasan pengajuan Anda!");
-                return;
-            }
-
-            let tglPengajuan = "";
-            if (tipe === 'Dinas Luar Full') {
-                if (!tglMulai || !tglSelesai) {
-                    showToast("Pilih rentang tanggal Dinas!");
-                    return;
+            myIzin.forEach(iz => {
+                let badgeClass = '';
+                if (iz.status === 'Menunggu') {
+                    badgeClass = 'bg-amber-50 text-amber-600 border-amber-100';
+                } else if (iz.status === 'Disetujui') {
+                    badgeClass = 'bg-emerald-50 text-emerald-600 border-emerald-100';
+                } else if (iz.status === 'Ditolak') {
+                    badgeClass = 'bg-rose-50 text-rose-600 border-rose-100';
                 }
-                tglPengajuan = `${tglMulai} s.d ${tglSelesai}`;
-            } else {
-                if (!tglTunggal) {
-                    showToast("Pilih tanggal pengajuan!");
-                    return;
-                }
-                tglPengajuan = tglTunggal;
-            }
 
-            const loading = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-            loadingText.innerText = "Mengirim permohonan ke server...";
-            loading.classList.remove('hidden');
+                const displayDate = iz.tglMulai === iz.tglSelesai 
+                    ? formatReadableDate(iz.tglMulai)
+                    : `${formatReadableDate(iz.tglMulai)} - ${formatReadableDate(iz.tglSelesai)}`;
 
-            const newIzin = {
-                id: "IZN-" + Date.now(),
-                nip: activeUser.NIP,
-                teacherName: activeUser.Name,
-                teacherAvatar: activeUser.Avatar,
-                tipe,
-                tanggal: tglPengajuan,
-                jamDatang: jamDatang || "-",
-                jamPulang: jamPulang || "-",
-                lokasi: tipe.includes('Dinas') ? selectedAddress : "-",
-                alasan,
-                status: "Menunggu",
-                tglPengajuan: getTodayKey()
-            };
+                const displayTime = (iz.jamDatang || iz.jamPulang)
+                    ? `<p class="text-[10px] text-slate-500 mt-0.5">Waktu: ${iz.jamDatang ? `Datang ${iz.jamDatang}` : ''}${iz.jamDatang && iz.jamPulang ? ' | ' : ''}${iz.jamPulang ? `Pulang ${iz.jamPulang}` : ''}</p>`
+                    : '';
 
-            const currentIzinDb = getIzin();
-            currentIzinDb.unshift(newIzin);
-            saveIzin(currentIzinDb);
-
-            const response = await sendPostAction('submitIzin', { data: newIzin });
-            loading.classList.add('hidden');
-
-            document.getElementById('izin-alasan').value = "";
-            document.getElementById('map-search-input').value = "";
-
-            if (response.success) {
-                showToast("Pengajuan berhasil dikirim & disimpan di Google Sheets!");
-            } else {
-                showToast("Tersimpan secara lokal (Luring).");
-            }
-            renderGuruRiwayatIzin();
+                const cardHtml = `
+                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs space-y-1.5 hover:border-slate-200 transition-all">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="font-bold text-slate-800">${iz.tipe}</span>
+                                <p class="text-[10px] text-slate-400 mt-0.5">${displayDate}</p>
+                                ${displayTime}
+                            </div>
+                            <span class="px-2 py-0.5 text-[9px] font-bold rounded border ${badgeClass}">
+                                ${iz.status}
+                            </span>
+                        </div>
+                        <p class="text-slate-600 font-light"><strong class="text-slate-700 font-medium">Alasan:</strong> "${iz.alasan}"</p>
+                        ${iz.alamat && iz.alamat !== 'Tidak ditentukan' ? `<p class="text-[10px] text-indigo-600"><strong class="text-slate-700 font-medium">Tujuan:</strong> ${iz.alamat}</p>` : ''}
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+            lucide.createIcons();
         }
 
         function switchGuruIzinTab(status) {
@@ -1475,509 +1576,323 @@
             renderGuruRiwayatIzin();
         }
 
-        function renderGuruRiwayatIzin() {
-            const listContainer = document.getElementById('guru-riwayat-izin-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = "";
-
-            const bulan = parseInt(document.getElementById('riwayat-izin-bulan').value);
-            const tahun = parseInt(document.getElementById('riwayat-izin-tahun').value);
-            const allIzin = getIzin().filter(iz => String(iz.NIP) === String(activeUser.NIP));
-
-            const filteredIzin = allIzin.filter(iz => {
-                if (iz.Status !== activeGuruIzinTab) return false;
-                const d = new Date(iz.TglPengajuan);
-                return d.getMonth() === bulan && d.getFullYear() === tahun;
+        // --- 13. ADMIN PANEL INTERFACE & ACTION CONTROLLERS ---
+        function switchAdminSubPage(sub) {
+            activeAdminSubPage = sub;
+            const subs = ['monitoring', 'izin', 'rekap'];
+            subs.forEach(s => {
+                document.getElementById(`admin-sub-${s}`).classList.add('hidden');
+                document.getElementById(`nav-admin-${s}`).className = "flex flex-col items-center justify-center gap-1 text-slate-400 transition-all";
             });
 
+            document.getElementById(`admin-sub-${sub}`).classList.remove('hidden');
+            document.getElementById(`nav-admin-${sub}`).className = "flex flex-col items-center justify-center gap-1 text-slate-800 font-bold transition-all";
+
+            if (sub === 'monitoring') renderAdminMonitoring();
+            if (sub === 'izin') renderAdminIzin();
+            if (sub === 'rekap') filterAdminRekap();
+        }
+
+        function switchAdminIzinTab(status) {
+            activeAdminIzinTab = status;
+            const tabs = ['Menunggu', 'Disetujui', 'Ditolak'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`btn-tab-iz-${t.toLowerCase()}`);
+                if (t === status) {
+                    btn.className = "flex-1 py-2 rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300";
+                } else {
+                    btn.className = "flex-1 py-2 rounded-lg text-slate-600 transition-all duration-300";
+                }
+            });
+            renderAdminIzin();
+        }
+
+        function renderAdminMonitoring() {
+            const container = document.getElementById('admin-monitoring-list');
+            container.innerHTML = '';
+
+            const today = getTodayDateString();
+            const searchKeyword = document.getElementById('admin-search-guru').value.toLowerCase();
+
+            const activeGurus = teachers.filter(t => t.role === 'guru' && (t.nama.toLowerCase().includes(searchKeyword) || t.nip.toString().includes(searchKeyword)));
+            
+            let countSudah = 0;
+            let countBelum = 0;
+
+            activeGurus.forEach(guru => {
+                const record = attendanceDb.find(a => isNipMatch(a.nip, guru.nip) && a.tanggal === today);
+                
+                let detailsHtml = '';
+                if (record) {
+                    countSudah++;
+                    detailsHtml = `
+                        <div class="mt-2 flex items-center justify-between text-[11px] bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <div class="space-y-0.5">
+                                <p class="text-slate-500">Datang: <span class="font-semibold text-slate-800">${record.jamDatang || '--:--'}</span></p>
+                                <p class="text-slate-500">Pulang: <span class="font-semibold text-slate-800">${record.jamPulang || '--:--'}</span></p>
+                            </div>
+                            ${record.fotoDatang ? `
+                                <button onclick="viewCapturedPhoto('${record.fotoDatang}', '${guru.nama}')" class="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-bold text-[10px] transition-all">
+                                    <i data-lucide="image" class="w-3.5 h-3.5"></i> Lihat Foto
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    countBelum++;
+                    detailsHtml = `<p class="text-xs text-rose-500 mt-1.5 font-medium">Belum melakukan presensi hari ini.</p>`;
+                }
+
+                const card = `
+                    <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <img src="${guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="${guru.nama}" class="w-10 h-10 rounded-full object-cover border border-slate-100">
+                            <div class="flex-1 min-w-0">
+                                <h5 class="text-sm font-bold text-slate-800 truncate">${guru.nama}</h5>
+                                <p class="text-[10px] text-slate-400 font-mono">NIP. ${guru.nip}</p>
+                            </div>
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded ${record ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}">
+                                ${record ? 'Sudah Presensi' : 'Belum'}
+                            </span>
+                        </div>
+                        ${detailsHtml}
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+
+            document.getElementById('count-sudah-absen').textContent = countSudah;
+            document.getElementById('count-belum-absen').textContent = countBelum;
+            lucide.createIcons();
+        }
+
+        function renderAdminIzin() {
+            const container = document.getElementById('admin-izin-list');
+            container.innerHTML = '';
+
+            const filteredIzin = izinDb.filter(i => i.status === activeAdminIzinTab);
+
             if (filteredIzin.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center py-6">
-                        <p class="text-[11px] text-slate-400 font-medium">Tidak ada riwayat pengajuan</p>
+                let emptyMessage = "Semua pengajuan telah diproses.";
+                if (activeAdminIzinTab === 'Disetujui') emptyMessage = "Belum ada pengajuan izin yang disetujui.";
+                if (activeAdminIzinTab === 'Ditolak') emptyMessage = "Belum ada pengajuan izin yang ditolak.";
+
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6">
+                        <i data-lucide="inbox" class="w-10 h-10 text-slate-300 mx-auto mb-2.5"></i>
+                        <p class="text-xs text-slate-500 font-medium">${emptyMessage}</p>
                     </div>
                 `;
                 return;
             }
 
             filteredIzin.forEach(iz => {
-                let badgeColor = "bg-amber-100 text-amber-700";
-                if (iz.Status === 'Disetujui') badgeColor = "bg-emerald-100 text-emerald-700";
-                if (iz.Status === 'Ditolak') badgeColor = "bg-rose-100 text-rose-700";
-
-                const detailLokasi = (iz.Lokasi && iz.Lokasi !== "-") ? `
-                    <div class="mt-1 flex items-start gap-1 text-[10px] text-indigo-600">
-                        <i data-lucide="map-pin" class="w-3 h-3 flex-shrink-0 mt-0.5"></i>
-                        <span>${iz.Lokasi}</span>
-                    </div>
-                ` : '';
-
-                const itemHtml = `
-                    <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl space-y-1 relative">
-                        <span class="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${iz.Status}</span>
-                        <h4 class="font-bold text-slate-800 text-xs">${iz.Tipe}</h4>
-                        <p class="text-[10px] text-slate-400 font-semibold">${iz.Tanggal} • ${iz.JamDatang !== "-" ? 'Rencana: ' + iz.JamDatang : 'Selesai: ' + iz.JamPulang}</p>
-                        <p class="text-[10px] text-slate-600 font-medium leading-relaxed mt-1">"${iz.Alasan}"</p>
-                        ${detailLokasi}
-                    </div>
-                `;
-                listContainer.insertAdjacentHTML('beforeend', itemHtml);
-            });
-            lucide.createIcons();
-        }
-
-        function renderGuruRekap() {
-            const bulan = parseInt(document.getElementById('rekap-filter-bulan').value);
-            const tahun = parseInt(document.getElementById('rekap-filter-tahun').value);
-            
-            const attendance = getAttendance().filter(a => String(a.NIP) === String(activeUser.NIP));
-            const listContainer = document.getElementById('guru-rekap-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = "";
-
-            const filteredLogs = attendance.filter(log => {
-                const logDate = new Date(log.Date);
-                return logDate.getMonth() === bulan && logDate.getFullYear() === tahun;
-            });
-
-            let countHadir = 0;
-            let countIzin = 0;
-            let countAlpa = 0;
-
-            filteredLogs.forEach(log => {
-                if (log.Status === 'Hadir' || log.Status === 'Terlambat') countHadir++;
-                else if (log.Status === 'Dinas' || log.Status === 'Izin') countIzin++;
-                else if (log.Status === 'Alpa') countAlpa++;
-            });
-
-            document.getElementById('rekap-stat-guru-hadir').innerText = `${countHadir} Hari`;
-            document.getElementById('rekap-stat-guru-izin').innerText = `${countIzin} Hari`;
-            document.getElementById('rekap-stat-guru-alpa').innerText = `${countAlpa} Hari`;
-
-            if (filteredLogs.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center py-8">
-                        <p class="text-xs text-slate-400 font-semibold">Tidak ada data presensi bulan ini</p>
-                    </div>
-                `;
-                return;
-            }
-
-            filteredLogs.sort((a, b) => new Date(b.Date) - new Date(a.Date));
-
-            filteredLogs.forEach(log => {
-                const dateObj = new Date(log.Date);
-                const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
-                const formatedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-
-                let statusBadge = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">${log.Status}</span>`;
-                if (log.Status === 'Dinas' || log.Status === 'Izin') {
-                    statusBadge = `<span class="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">${log.Status}</span>`;
-                } else if (log.Status === 'Alpa') {
-                    statusBadge = `<span class="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">Alpa</span>`;
-                }
-
-                const selfieImg = log.SelfieIn ? `
-                    <div class="mt-2.5 flex items-center gap-2">
-                        <img src="${log.SelfieIn}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" alt="Selfie Datang">
-                        ${log.SelfieOut ? `<img src="${log.SelfieOut}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" alt="Selfie Pulang">` : ''}
-                    </div>
-                ` : '';
-
-                const itemHtml = `
-                    <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm space-y-1.5 hover:scale-[1.01] transition-transform">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h5 class="font-bold text-slate-800 text-xs">${dayName}, ${formatedDate}</h5>
-                                <p class="text-[9px] text-slate-400 font-semibold uppercase">Hari Efektif</p>
-                            </div>
-                            ${statusBadge}
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-[11px] font-medium pt-1.5 border-t border-slate-50 text-slate-500">
-                            <div>Jam Datang: <span class="text-slate-800 font-semibold">${log.TimeIn || '-'}</span></div>
-                            <div>Jam Pulang: <span class="text-slate-800 font-semibold">${log.TimeOut || '-'}</span></div>
-                        </div>
-                        ${selfieImg}
-                    </div>
-                `;
-                listContainer.insertAdjacentHTML('beforeend', itemHtml);
-            });
-        }
-
-        function uploadProfilePhoto(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const teachers = getTeachers();
-                const updatedTeachers = teachers.map(t => {
-                    if (String(t.NIP) === String(activeUser.NIP)) {
-                        t.Avatar = e.target.result;
-                    }
-                    return t;
-                });
-
-                localStorage.setItem('teachers_db', JSON.stringify(updatedTeachers));
-                activeUser.Avatar = e.target.result;
-                localStorage.setItem('active_session_user', JSON.stringify(activeUser));
-
-                document.getElementById('profil-photo-preview').src = e.target.result;
-                document.getElementById('guru-header-avatar').src = e.target.result;
-
-                showToast("Mengunggah foto baru ke database...");
-                await sendPostAction('uploadProfilePhoto', { nip: activeUser.NIP, avatar: e.target.result });
-                showToast("Foto profil berhasil diperbarui!");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function openCameraModal(type) {
-            currentPresensiType = type;
-            const title = document.getElementById('camera-modal-title');
-            title.innerText = type === 'datang' ? "Presensi Jam Datang" : "Presensi Jam Pulang";
-
-            const modal = document.getElementById('camera-modal');
-            modal.classList.remove('hidden');
-
-            const video = document.getElementById('webcam');
-            
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
-                .then(stream => {
-                    streamInstance = stream;
-                    video.srcObject = stream;
-                })
-                .catch(err => {
-                    console.log("Kamera dibatasi atau tidak didukung, berjalan di mode simulasi.");
-                    video.srcObject = null;
-                });
-        }
-
-        function closeCameraModal() {
-            const modal = document.getElementById('camera-modal');
-            modal.classList.add('hidden');
-
-            if (streamInstance) {
-                streamInstance.getTracks().forEach(track => track.stop());
-                streamInstance = null;
-            }
-        }
-
-        function takePictureAndPresensi() {
-            const video = document.getElementById('webcam');
-            const canvas = document.getElementById('photo-canvas');
-            const ctx = canvas.getContext('2d');
-            let selfieData = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300"; 
-
-            if (streamInstance && video) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.translate(canvas.width, 0);
-                ctx.scale(-1, 1);
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                selfieData = canvas.toDataURL('image/jpeg');
-            }
-
-            closeCameraModal();
-
-            const loading = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-            loadingText.innerText = "Mengunggah data presensi...";
-            loading.classList.remove('hidden');
-
-            setTimeout(async () => {
-                const attendance = getAttendance();
-                const todayKey = getTodayKey();
-                const timeObj = getCurrentTimeObject();
-
-                let myLog = attendance.find(log => String(log.NIP) === String(activeUser.NIP) && log.Date === todayKey);
-                let uploadPayload = null;
-
-                if (currentPresensiType === 'datang') {
-                    if (myLog) {
-                        loading.classList.add('hidden');
-                        showToast("Anda sudah absen Datang hari ini!");
-                        return;
-                    }
-
-                    const newLog = {
-                        Date: todayKey,
-                        NIP: activeUser.NIP,
-                        Name: activeUser.Name,
-                        TimeIn: timeObj.formatted,
-                        TimeOut: "",
-                        Status: "Hadir",
-                        SelfieIn: selfieData,
-                        SelfieOut: ""
-                    };
-                    attendance.push(newLog);
-                    uploadPayload = newLog;
-                } else {
-                    if (!myLog) {
-                        loading.classList.add('hidden');
-                        showToast("Lakukan absen masuk pagi terlebih dahulu!");
-                        return;
-                    }
-                    if (myLog.TimeOut) {
-                        loading.classList.add('hidden');
-                        showToast("Anda sudah absen pulang hari ini!");
-                        return;
-                    }
-
-                    myLog.TimeOut = timeObj.formatted;
-                    myLog.SelfieOut = selfieData;
-                    uploadPayload = myLog;
-                }
-
-                localStorage.setItem('attendance_db', JSON.stringify(attendance));
-
-                const response = await sendPostAction('saveAttendance', { 
-                    data: {
-                        date: todayKey,
-                        nip: activeUser.NIP,
-                        name: activeUser.Name,
-                        timeIn: uploadPayload.TimeIn || "",
-                        timeOut: uploadPayload.TimeOut || "",
-                        status: uploadPayload.Status || "Hadir",
-                        selfieIn: uploadPayload.SelfieIn || "",
-                        selfieOut: uploadPayload.SelfieOut || ""
-                    }
-                });
-
-                loading.classList.add('hidden');
-
-                if (response.success) {
-                    showToast(`Presensi berhasil terunggah ke Spreadsheet: ${timeObj.formatted}`);
-                } else {
-                    showToast(`Presensi direkam secara lokal: ${timeObj.formatted}`);
-                }
+                const guru = teachers.find(t => isNipMatch(t.nip, iz.nip));
                 
-                renderGuruDashboard();
-            }, 1000);
-        }
-
-        function switchAdminSubPage(subPage) {
-            currentSubPageAdmin = subPage;
-            const subs = ['admin-sub-monitoring', 'admin-sub-izin'];
-            subs.forEach(s => {
-                const element = document.getElementById(s);
-                if (element) {
-                    if (s === `admin-sub-${subPage}`) element.classList.remove('hidden');
-                    else element.classList.add('hidden');
-                }
-            });
-
-            const tabs = ['monitoring', 'izin'];
-            tabs.forEach(t => {
-                const nav = document.getElementById(`nav-admin-${t}`);
-                if (nav) {
-                    if (t === subPage) {
-                        nav.className = "flex-1 flex flex-col items-center justify-center gap-1 text-blue-600 font-bold transition-all";
-                    } else {
-                        nav.className = "flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 transition-all";
-                    }
-                }
-            });
-
-            if (subPage === 'monitoring') renderAdminMonitoring();
-            else if (subPage === 'izin') renderAdminIzin();
-        }
-
-        function renderAdminDashboard() {
-            switchAdminSubPage(currentSubPageAdmin);
-            updateAdminIzinBadge();
-        }
-
-        function updateAdminIzinBadge() {
-            const pendingIzin = getIzin().filter(i => i.Status === 'Menunggu');
-            const badge = document.getElementById('badge-admin-izin');
-            if (badge) {
-                if (pendingIzin.length > 0) {
-                    badge.innerText = pendingIzin.length;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
-            }
-        }
-
-        function renderAdminMonitoring() {
-            const teachers = getTeachers();
-            const attendance = getAttendance();
-            const todayKey = getTodayKey();
-            const searchQuery = document.getElementById('admin-search-guru').value.toLowerCase().trim();
-            const listContainer = document.getElementById('admin-monitoring-list');
-
-            if (!listContainer) return;
-            listContainer.innerHTML = "";
-
-            let countAbsen = 0;
-            let countBelum = 0;
-
-            teachers.forEach(teacher => {
-                const hasNameMatch = teacher.Name && teacher.Name.toLowerCase().includes(searchQuery);
-                const hasNipMatch = teacher.NIP && String(teacher.NIP).includes(searchQuery);
-                if (!hasNameMatch && !hasNipMatch) return; 
-
-                if (teacher.Role === 'admin') return;
-
-                const log = attendance.find(a => String(a.NIP) === String(teacher.NIP) && a.Date === todayKey);
-                
-                let statsHtml = "";
-                if (log) {
-                    countAbsen++;
-                    if (log.Status === 'Dinas') {
-                        statsHtml = `
-                            <div class="space-y-1">
-                                <span class="text-[9px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md font-bold uppercase border border-amber-100 flex items-center gap-0.5 w-max"><i data-lucide="map-pin" class="w-2.5 h-2.5"></i> Dinas Luar</span>
-                                <p class="text-[10px] text-slate-400 leading-tight">Dinas: ${log.TimeIn}</p>
-                            </div>
-                        `;
-                    } else {
-                        statsHtml = `
-                            <div class="space-y-1">
-                                <span class="text-[9px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md font-bold uppercase border border-emerald-100 w-max block">Hadir</span>
-                                <p class="text-[10px] text-slate-500 font-medium">Datang: <span class="font-bold text-slate-700">${log.TimeIn}</span></p>
-                                ${log.TimeOut ? `<p class="text-[10px] text-slate-500 font-medium">Pulang: <span class="font-bold text-slate-700">${log.TimeOut}</span></p>` : `<p class="text-[10px] text-slate-400">Belum pulang</p>`}
-                            </div>
-                        `;
-                    }
-                } else {
-                    countBelum++;
-                    statsHtml = `
-                        <span class="text-[9px] text-rose-500 bg-rose-50 px-2.5 py-1 rounded-md font-bold uppercase border border-rose-100 block w-max">Belum Presensi</span>
+                let actionHtml = '';
+                if (iz.status === 'Menunggu') {
+                    actionHtml = `
+                        <div class="flex gap-2 pt-2">
+                            <button onclick="approveIzin('${iz.id}', 'Ditolak')" class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition-all">Tolak</button>
+                            <button onclick="approveIzin('${iz.id}', 'Disetujui')" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all">Setujui</button>
+                        </div>
+                    `;
+                } else if (iz.status === 'Disetujui') {
+                    actionHtml = `
+                        <div class="mt-2 py-2 px-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-1.5 text-emerald-700 text-xs font-semibold">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Pengajuan ini Telah Disetujui
+                        </div>
+                    `;
+                } else if (iz.status === 'Ditolak') {
+                    actionHtml = `
+                        <div class="mt-2 py-2 px-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center gap-1.5 text-rose-700 text-xs font-semibold">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> Pengajuan ini Telah Ditolak
+                        </div>
                     `;
                 }
 
-                const cardHtml = `
-                    <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex justify-between items-center gap-4">
-                        <div class="flex items-center gap-3">
-                            <img src="${teacher.Avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Avatar" class="w-11 h-11 rounded-full object-cover">
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-xs">${teacher.Name}</h4>
-                                <p class="text-[9px] font-semibold text-slate-400 font-mono">NIP. ${teacher.NIP}</p>
-                                <p class="text-[9px] font-semibold text-blue-600 mt-0.5">${teacher.Jabatan || 'Guru'}</p>
+                const card = `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
+                        <div class="flex items-center gap-3 border-b border-slate-100 pb-2.5">
+                            <img src="${guru ? (guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150') : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Guru" class="w-10 h-10 rounded-full object-cover">
+                            <div class="flex-1 min-w-0">
+                                <h5 class="text-sm font-bold text-slate-800 truncate">${guru ? guru.nama : 'Tidak Diketahui'}</h5>
+                                <p class="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold w-max mt-1">${iz.tipe}</p>
                             </div>
                         </div>
-                        <div class="text-right flex-shrink-0">${statsHtml}</div>
+                        <div class="text-xs space-y-1 text-slate-600">
+                            <p><strong class="text-slate-800">Masa Pengajuan:</strong> ${iz.tglMulai} s.d ${iz.tglSelesai}</p>
+                            ${iz.alamat ? `<p><strong class="text-slate-800">Alamat Tujuan:</strong> <span class="text-indigo-600">${iz.alamat}</span></p>` : ''}
+                            <p><strong class="text-slate-800">Alasan:</strong> "${iz.alasan}"</p>
+                        </div>
+                        ${actionHtml}
                     </div>
                 `;
-                listContainer.insertAdjacentHTML('beforeend', cardHtml);
+                container.innerHTML += card;
             });
-
-            document.getElementById('count-sudah-absen').innerText = countAbsen;
-            document.getElementById('count-belum-absen').innerText = countBelum;
             lucide.createIcons();
         }
 
-        function renderAdminIzin() {
-            const izins = getIzin().filter(i => i.Status === 'Menunggu');
-            const listContainer = document.getElementById('admin-izin-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = "";
+        async function approveIzin(id, status) {
+            const index = izinDb.findIndex(i => i.id === id);
+            if (index !== -1) {
+                const req = izinDb[index];
+                
+                if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
+                    toggleLoading(true);
+                    try {
+                        const res = await fetch(APPS_SCRIPT_URL, {
+                            method: "POST",
+                            body: JSON.stringify({
+                                action: "proses_izin",
+                                id: id,
+                                nip: req.nip,
+                                tglMulai: req.tglMulai,
+                                tipe: req.tipe,
+                                status: status
+                            })
+                        });
+                        const resJson = await res.json();
+                        if (resJson.status === "success") {
+                            if (status === 'Disetujui') {
+                                await fetch(APPS_SCRIPT_URL, {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        action: "presensi",
+                                        nip: req.nip,
+                                        tanggal: req.tglMulai,
+                                        jamDatang: req.jamDatang || "--",
+                                        jamPulang: req.jamPulang || "--",
+                                        status: req.tipe,
+                                        fotoDatang: '',
+                                        lat: 0,
+                                        lng: 0,
+                                        alamat: req.alamat
+                                    })
+                                });
+                            }
+                            await fetchDataFromSpreadsheet(); 
+                            alertCustom("Keputusan Disimpan", `Pengajuan izin berhasil ${status.toLowerCase()} dan disimpan.`);
+                        } else {
+                            throw new Error(resJson.message);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alertCustom("Gagal Menyimpan", "Gagal mengirimkan keputusan.");
+                        updateIzinLocally(index, status, req);
+                    } finally {
+                        toggleLoading(false);
+                    }
+                } else {
+                    updateIzinLocally(index, status, req);
+                }
+            }
+        }
 
-            if (izins.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center py-12">
-                        <i data-lucide="smile" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                        <p class="text-xs text-slate-400 font-semibold">Semua permohonan izin telah diproses.</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
+        function updateIzinLocally(index, status, req) {
+            izinDb[index].status = status;
+            if (status === 'Disetujui') {
+                attendanceDb.push({
+                    id: 'att-iz-' + Date.now(),
+                    nip: req.nip,
+                    tanggal: req.tglMulai,
+                    jamDatang: req.jamDatang || '--',
+                    jamPulang: req.jamPulang || '--',
+                    status: req.tipe,
+                    fotoDatang: '',
+                    lat: 0,
+                    lng: 0,
+                    alamat: req.alamat
+                });
+            }
+            alertCustom("Keputusan Disimpan", `Pengajuan izin berhasil ${status.toLowerCase()} (Lokal).`);
+            renderAdminIzin();
+        }
+
+        function filterAdminRekap() {
+            const range = document.getElementById('admin-rekap-range').value;
+            const container = document.getElementById('admin-rekap-guru-list');
+            container.innerHTML = '';
+
+            let filterDateFn = (attDate) => true; 
+            const now = new Date();
+            const todayStr = getTodayDateString();
+
+            if (range === 'hari') {
+                filterDateFn = (attDate) => attDate === todayStr;
+            } else if (range === 'minggu') {
+                filterDateFn = (attDate) => {
+                    const diff = Math.abs(new Date(todayStr) - new Date(attDate));
+                    return (diff / (1000 * 60 * 60 * 24)) <= 7;
+                };
+            } else if (range === 'bulan') {
+                const currMonth = now.getMonth();
+                filterDateFn = (attDate) => {
+                    const attM = new Date(attDate).getMonth();
+                    return attM === currMonth;
+                };
             }
 
-            izins.forEach(iz => {
-                const detailLokasi = (iz.Lokasi && iz.Lokasi !== "-") ? `
-                    <div class="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[10px] text-indigo-600 font-semibold flex items-start gap-1">
-                        <i data-lucide="map-pin" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
-                        <span>${iz.Lokasi}</span>
-                    </div>
-                ` : '';
+            let statHadir = 0;
+            let statIzin = 0;
+            let statAlpa = 0;
 
-                const cardHtml = `
-                    <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm space-y-3">
-                        <div class="flex items-center gap-3">
-                            <img src="${iz.TeacherAvatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Ava" class="w-10 h-10 rounded-full object-cover">
+            teachers.filter(t => t.role === 'guru').forEach(guru => {
+                const history = attendanceDb.filter(a => isNipMatch(a.nip, guru.nip) && filterDateFn(a.tanggal));
+                
+                let hadir = 0;
+                let izin = 0;
+
+                history.forEach(h => {
+                    if (h.status === 'Hadir') hadir++;
+                    else if (h.status.includes('Izin') || h.status.includes('Dinas')) izin++;
+                });
+
+                statHadir += hadir;
+                statIzin += izin;
+                const alpa = range === 'hari' ? (history.length === 0 ? 1 : 0) : 0;
+                statAlpa += alpa;
+
+                const card = `
+                    <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <img src="${guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Guru" class="w-9 h-9 rounded-full object-cover">
                             <div>
-                                <h4 class="font-bold text-slate-800 text-xs">${iz.TeacherName}</h4>
-                                <p class="text-[9px] font-semibold text-slate-400 font-mono">NIP. ${iz.NIP}</p>
+                                <h5 class="text-xs font-bold text-slate-800">${guru.nama}</h5>
+                                <p class="text-[9px] text-slate-400 font-mono">${guru.nip}</p>
                             </div>
                         </div>
-                        <div class="border-t border-slate-100 pt-2.5 space-y-1">
-                            <span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full uppercase inline-block">${iz.Tipe}</span>
-                            <p class="text-[11px] text-slate-500 font-medium">Tanggal: <span class="font-bold text-slate-700">${iz.Tanggal}</span></p>
-                            ${(iz.JamDatang && iz.JamDatang !== "-") ? `<p class="text-[11px] text-slate-500 font-medium">Waktu: <span class="font-bold text-slate-700">${iz.JamDatang} s.d ${iz.JamPulang}</span></p>` : ''}
-                            <p class="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl italic leading-relaxed">"${iz.Alasan}"</p>
-                            ${detailLokasi}
-                        </div>
-                        <!-- Action Buttons -->
-                        <div class="flex gap-2.5 pt-1.5">
-                            <button onclick="processIzinStatus('${iz.ID}', 'Ditolak')" class="flex-1 py-2 bg-rose-50 border border-rose-100 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all">
-                                Tolak Izin
-                            </button>
-                            <button onclick="processIzinStatus('${iz.ID}', 'Disetujui')" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-100">
-                                Setujui Izin
-                            </button>
+                        <div class="flex gap-2 text-center text-[10px]">
+                            <div class="px-2 py-1 bg-emerald-50 rounded text-emerald-700 font-bold">H: ${hadir}</div>
+                            <div class="px-2 py-1 bg-blue-50 rounded text-blue-700 font-bold">I: ${izin}</div>
                         </div>
                     </div>
                 `;
-                listContainer.insertAdjacentHTML('beforeend', cardHtml);
+                container.innerHTML += card;
             });
-            lucide.createIcons();
+
+            document.getElementById('rekap-stat-hadir').textContent = statHadir;
+            document.getElementById('rekap-stat-izin').textContent = statIzin;
+            document.getElementById('rekap-stat-alpa').textContent = statAlpa;
         }
 
-        function processIzinStatus(izinId, status) {
-            const loading = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-            loadingText.innerText = "Memproses pembaruan status...";
-            loading.classList.remove('hidden');
-
-            setTimeout(async () => {
-                const izins = getIzin();
-                const updatedIzins = izins.map(iz => {
-                    if (String(iz.ID) === String(izinId)) {
-                        iz.Status = status;
-                        
-                        if (status === 'Disetujui') {
-                            const attendance = getAttendance();
-                            const todayKey = getTodayKey();
-                            
-                            let log = attendance.find(a => String(a.NIP) === String(iz.NIP) && a.Date === todayKey);
-                            if (!log) {
-                                log = {
-                                    Date: todayKey,
-                                    NIP: iz.NIP,
-                                    Name: iz.TeacherName,
-                                    TimeIn: iz.JamDatang !== "-" ? iz.JamDatang : "07:00:00",
-                                    TimeOut: iz.JamPulang !== "-" ? iz.JamPulang : "14:00:00",
-                                    Status: (iz.Tipe || "").includes('Dinas') ? "Dinas" : "Izin",
-                                    SelfieIn: "",
-                                    SelfieOut: ""
-                                };
-                                attendance.push(log);
-                                saveAttendance(attendance);
-                            }
-                        }
-                    }
-                    return iz;
-                });
-
-                saveIzin(updatedIzins);
-
-                const response = await sendPostAction('processIzinStatus', { id: izinId, status: status });
-                loading.classList.add('hidden');
-
-                if (response.success) {
-                    showToast(`Status izin berhasil diunggah: ${status}`);
-                } else {
-                    showToast(`Berhasil diperbarui secara lokal.`);
-                }
-
-                updateAdminIzinBadge();
-                renderAdminIzin();
-            }, 800);
+        function viewCapturedPhoto(imgUrl, name) {
+            document.getElementById('preview-foto-title').textContent = name;
+            document.getElementById('preview-foto-img').src = imgUrl;
+            document.getElementById('modal-preview-foto').classList.remove('hidden');
         }
 
+        function closePreviewFotoModal() {
+            document.getElementById('modal-preview-foto').classList.add('hidden');
+        }
+
+        // --- 14. REAL-TIME DISTANCE TRACKING & BELL REFRESHER ---
+        setInterval(() => {
+            if (currentUser && currentUser.role === 'guru' && activeGuruSubPage === 'beranda') {
+                initDistanceTracking();
+                updateBellState();
+            }
+        }, 3000);
     </script>
 </body>
 </html>
