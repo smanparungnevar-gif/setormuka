@@ -693,12 +693,13 @@
 
     </div>
 
-    <!-- Script Utama Aplikasi (Tunggal & Terkonsolidasi) -->
+    <!-- Script Utama Aplikasi (Tunggal, Terkonsolidasi, Tanpa Syntax Error) -->
     <script>
         // ================= CONFIG: TEMPELKAN URL APPS SCRIPT ANDA DI SINI =================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3jCgE6vPpxX8QvX7Xl-z5uR9b-H1GZ1w_example/exec"; 
+        // Masukkan URL Google Apps Script Web App hasil Deployment Anda
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7RdKXd4RldYJgN4LmMi4hFE9m401KJIp-_fJ76MYCqmO9ra4nfgzO-BTqUGKo-CI34Q/exec"; 
 
-        // --- 1. STATE MEMORI APLIKASI ---
+        // --- 1. STATE MEMORI INTERNAL APLIKASI ---
         let teachers = [];      
         let attendanceDb = [];  
         let izinDb = [];        
@@ -725,7 +726,7 @@
         let mapInstance = null;
         let mapMarker = null;
 
-        // --- 3. UTILITY FUNGSIONAL UTAMA (DIDEKLARASIKAN DI AWAL AGAR BEBAS DARI REFERENCE ERROR) ---
+        // --- 3. UTILITY FUNGSIONAL UTAMA ---
         
         // Detak Jam Real-time harian
         function startLiveClock() {
@@ -885,11 +886,11 @@
             ];
 
             izinDb = [
-                { id: "iz-1", nip: "198804122015032001", tipe: "Dinas Luar Full", tglMulai: "2026-06-25", tglSelesai: "2026-06-25", jamDatang: "", jamPulang: "", alamat: "Dinas Pendidikan DKI Jakarta", alasan: "Rapat koordinasi kurikulum.", status: "Disetujui" }
+                { id: "iz-1", nip: "198804122015032001", tipe: "Dinas Luar Full", tglMulai: "2026-06-25", tglSelesai: "2026-06-25", jamDatang: "", jamPulang: "", alamat: "Dinas Pendidikan DKI Jakarta", alasan: "Rapat koordinasi.", status: "Disetujui" }
             ];
         }
 
-        // --- 5. LOGIKA LOGIN & SESSION HANDLING (DIOPTIMALKAN UNTUK MENCEGAH STUCK) ---
+        // --- 5. LOGIKA LOGIN & SESSION HANDLING ---
         function switchLoginRole(role) {
             currentRole = role;
             const btnGuru = document.getElementById('btn-tab-guru');
@@ -939,7 +940,6 @@
                 }
             }
 
-            // AMBIL DATA HANYA JIKA MEMORI KOSONG DAN LINK BUKAN DUMMY (Mencegah Stuck)
             if (teachers.length === 0) {
                 if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
                     try {
@@ -972,7 +972,7 @@
                 }
             }
             
-            alertCustom("Login Gagal", "NIP atau Password salah! Pastikan Anda memasukkan NIP Anda dengan benar pada kedua kolom (NIP & Password).");
+            alertCustom("Login Gagal", "NIP atau Password salah! Pastikan Anda memasukkan NIP Anda dengan benar pada kedua kolom.");
         }
 
         function loginSuccessRedirect() {
@@ -1030,29 +1030,6 @@
             } else {
                 statusLabel.textContent = "Belum Presensi";
                 statusLabel.className = "text-lg font-bold text-rose-300";
-            }
-        }
-
-        function switchGuruSubPage(sub) {
-            activeGuruSubPage = sub;
-            const subs = ['beranda', 'izin', 'rekap', 'profil'];
-            subs.forEach(s => {
-                document.getElementById(`guru-sub-${s}`).classList.add('hidden');
-                document.getElementById(`nav-guru-${s}`).className = "flex flex-col items-center justify-center gap-1 text-slate-400 transition-all";
-            });
-
-            document.getElementById(`guru-sub-${sub}`).classList.remove('hidden');
-            document.getElementById(`nav-guru-${sub}`).className = "flex flex-col items-center justify-center gap-1 text-blue-600 font-semibold transition-all";
-
-            if (sub === 'beranda') {
-                renderLivePresensi();
-                updateBellState();
-            } else if (sub === 'izin') {
-                toggleIzinFormFields();
-                initLeafletMap();
-                renderGuruRiwayatIzin(); 
-            } else if (sub === 'rekap') {
-                renderGuruRekap();
             }
         }
 
@@ -1144,27 +1121,6 @@
                 if(bellRipple) bellRipple.classList.add('hidden');
             }
             lucide.createIcons();
-        }
-
-        function handleBellClick() {
-            const now = new Date();
-            const hour = now.getHours();
-            const timeVal = hour * 60 + now.getMinutes();
-
-            const startDatang = 5 * 60;
-            const startPulang = 15 * 60;
-            const endPulang = 23 * 60 + 55;
-
-            let type = '';
-            if (timeVal >= startPulang && timeVal <= endPulang) {
-                type = 'pulang';
-            } else if (timeVal >= startDatang && timeVal < startPulang) {
-                type = 'datang';
-            }
-
-            if (type) {
-                openCameraModal(type);
-            }
         }
 
         const initDistanceTracking = () => {
@@ -1886,13 +1842,122 @@
             document.getElementById('modal-preview-foto').classList.add('hidden');
         }
 
-        // --- 14. REAL-TIME DISTANCE TRACKING & BELL REFRESHER ---
-        setInterval(() => {
-            if (currentUser && currentUser.role === 'guru' && activeGuruSubPage === 'beranda') {
-                initDistanceTracking();
-                updateBellState();
+        // --- 14. FORM MANAJEMEN PENGAJUAN IZIN ---
+        function toggleIzinFormFields() {
+            const tipe = document.getElementById('izin-tipe').value;
+            const tglTunggal = document.getElementById('div-izin-tanggal-tunggal');
+            const tglRange = document.getElementById('div-izin-tanggal-range');
+            const mapDiv = document.getElementById('div-izin-map');
+            const jamDiv = document.getElementById('div-izin-jam');
+            const wrapDatang = document.getElementById('wrapper-jam-datang');
+            const wrapPulang = document.getElementById('wrapper-jam-pulang');
+
+            jamDiv.className = "grid gap-3";
+
+            if (tipe === 'Terlambat') {
+                tglTunggal.classList.remove('hidden');
+                tglRange.classList.add('hidden');
+                mapDiv.classList.add('hidden');
+                jamDiv.classList.remove('hidden');
+                jamDiv.classList.add('grid-cols-1');
+                wrapDatang.classList.remove('hidden');
+                wrapPulang.classList.add('hidden');
+            } else if (tipe === 'Pulang Cepat') {
+                tglTunggal.classList.remove('hidden');
+                tglRange.classList.add('hidden');
+                mapDiv.classList.add('hidden');
+                jamDiv.classList.remove('hidden');
+                jamDiv.classList.add('grid-cols-1');
+                wrapDatang.classList.add('hidden');
+                wrapPulang.classList.remove('hidden');
+            } else if (tipe === 'Dinas Luar Full') {
+                tglTunggal.classList.add('hidden');
+                tglRange.classList.remove('hidden');
+                mapDiv.classList.remove('hidden');
+                jamDiv.classList.add('hidden');
+            } else {
+                tglTunggal.classList.add('hidden');
+                tglRange.classList.remove('hidden');
+                mapDiv.classList.remove('hidden');
+                jamDiv.classList.add('hidden');
             }
-        }, 3000);
+        }
+
+        function initLeafletMap() {
+            const tipe = document.getElementById('izin-tipe').value;
+            if (tipe === 'Terlambat' || tipe === 'Pulang Cepat') return;
+
+            setTimeout(() => {
+                if (mapInstance) {
+                    mapInstance.invalidateSize();
+                    return;
+                }
+
+                mapInstance = L.map('izin-map-canvas').setView([-6.208760, 106.845599], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(mapInstance);
+
+                mapMarker = L.marker([-6.208760, 106.845599], { draggable: true }).addTo(mapInstance);
+                
+                mapMarker.on('dragend', function (e) {
+                    const latlng = mapMarker.getLatLng();
+                    getAddressFromCoords(latlng.lat, latlng.lng);
+                });
+            }, 300);
+        }
+
+        function searchAddress() {
+            const query = document.getElementById('map-search-input').value;
+            if (!query) return;
+
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        
+                        mapInstance.setView([lat, lon], 14);
+                        mapMarker.setLatLng([lat, lon]);
+                        document.getElementById('izin-alamat-terpilih').textContent = data[0].display_name;
+                    } else {
+                        alertCustom("Peta", "Alamat tidak ditemukan.");
+                    }
+                });
+        }
+
+        function getTodayDateString() {
+            const d = new Date();
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        }
+
+        function formatReadableDate(dateString) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const d = new Date(dateString);
+            return d.toLocaleDateString('id-ID', options);
+        }
+
+        function alertCustom(title, text) {
+            const modalHtml = `
+                <div id="alert-dialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+                    <div class="bg-white w-full max-w-sm rounded-3xl p-6 space-y-4 shadow-xl">
+                        <h4 class="font-bold text-lg text-slate-900">${title}</h4>
+                        <p class="text-sm text-slate-500 leading-normal">${text}</p>
+                        <p class="text-xs text-slate-400">Tekan tombol di bawah untuk menutup pesan</p>
+                        <button onclick="document.getElementById('alert-dialog').remove()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all">Oke, Paham</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
     </script>
 </body>
 </html>
