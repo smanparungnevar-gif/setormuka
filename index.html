@@ -695,23 +695,20 @@
 
     <!-- Script Utama Aplikasi (Tunggal, Terkonsolidasi, Tanpa Syntax Error) -->
     <script>
-        // ================= CONFIG: TEMPELKAN URL APPS SCRIPT ANDA DI SINI =================
-        // Masukkan URL Google Apps Script Web App hasil Deployment Anda
+        // ================= CONFIG: URL APPS SCRIPT ANDA =================
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7RdKXd4RldYJgN4LmMi4hFE9m401KJIp-_fJ76MYCqmO9ra4nfgzO-BTqUGKo-CI34Q/exec"; 
 
-        // --- 1. STATE MEMORI INTERNAL APLIKASI ---
+        // --- STATE MEMORI INTERNAL ---
         let teachers = [];      
         let attendanceDb = [];  
         let izinDb = [];        
 
-        // Daftar Libur Nasional Utama (Tanggal Merah) Indonesia Tahun 2026
         const holidays2026 = [
             "2026-01-01", "2026-01-18", "2026-02-17", "2026-03-19", "2026-03-20", "2026-03-21",
             "2026-04-03", "2026-05-01", "2026-05-14", "2026-05-27", "2026-06-01", "2026-06-15",
             "2026-07-06", "2026-08-17", "2026-09-15", "2026-12-25"
         ];
 
-        // --- 2. GLOBAL STATE UTAMA NAVIGASI & PRESENSI ---
         let currentRole = 'guru'; 
         let currentUser = null;
         let activeGuruSubPage = 'beranda';
@@ -721,24 +718,21 @@
         
         let currentPresensiType = ''; 
         let currentCapturedPhoto = '';
-        let currentGeoLocation = { lat: -6.200000, lng: 106.816666, address: "SMK Negeri Jakarta Pusat" };
+        let currentGeoLocation = { lat: -6.208760, lng: 106.845599, address: "SMAN 1" };
 
         let mapInstance = null;
         let mapMarker = null;
 
-        // --- 3. UTILITY FUNGSIONAL UTAMA ---
-        
-        // Detak Jam Real-time harian
+        // Detak Jam Real-time
         function startLiveClock() {
             setInterval(() => {
                 const now = new Date();
                 const clock = document.getElementById('live-clock');
-                if (clock) {
-                    clock.textContent = now.toTimeString().split(' ')[0];
-                }
+                if (clock) { clock.textContent = now.toTimeString().split(' ')[0]; }
             }, 1000);
         }
 
+        // Pembersih NIP dari spasi, karakter aneh, atau format pecahan (.0)
         const cleanNip = (val) => {
             if (val === undefined || val === null) return "";
             let s = val.toString().trim();
@@ -753,11 +747,7 @@
             const clean1 = cleanNip(nip1);
             const clean2 = cleanNip(nip2);
             if (!clean1 || !clean2) return false;
-            if (clean1 === clean2) return true;
-            if (clean1.length >= 15 && clean2.length >= 15) {
-                return clean1.substring(0, 15) === clean2.substring(0, 15);
-            }
-            return false;
+            return clean1 === clean2;
         }
 
         const cleanDate = (val) => {
@@ -780,7 +770,7 @@
         };
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Radius Bumi dalam meter
+            const R = 6371e3;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -790,19 +780,24 @@
             return R * c; 
         }
 
-        // Helper Penghitung Menit Keterlambatan (Batas 06:30)
         function calculateLateMinutes(checkInStr) {
             if (!checkInStr) return 0;
             const [h, m] = checkInStr.split(':').map(Number);
             const checkInMins = h * 60 + m;
             const limitMins = 6 * 60 + 30; // 06:30
-            if (checkInMins > limitMins) {
-                return checkInMins - limitMins;
-            }
+            if (checkInMins > limitMins) { return checkInMins - limitMins; }
             return 0;
         }
 
-        // --- 4. SINKRONISASI DATABASE GOOGLE SHEETS & LOCAL DATA ---
+        function toggleLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                if (show) overlay.classList.remove('hidden');
+                else overlay.classList.add('hidden');
+            }
+        }
+
+        // --- AMBIL DATA SPREADSHEET (REAL-TIME) ---
         async function fetchDataFromSpreadsheet() {
             if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("example")) {
                 console.warn("Aplikasi berjalan dalam mode simulasi offline.");
@@ -812,15 +807,18 @@
 
             toggleLoading(true);
             try {
-                const response = await fetch(APPS_SCRIPT_URL);
+                // Beri parameter timestamp agar browser tidak melakukan caching data lama (Realtime Force)
+                const response = await fetch(`${APPS_SCRIPT_URL}?_=${Date.now()}`);
                 if (!response.ok) throw new Error("Gagal mengambil data.");
                 
                 const data = await response.json();
                 
+                // Petakan data guru
                 if (data.guru && data.guru.length > 0) {
                     teachers = data.guru;
                 }
                 
+                // Petakan data absensi
                 if (data.absensi) {
                     attendanceDb = data.absensi.map((a, index) => ({
                         id: 'att-' + index,
@@ -836,9 +834,10 @@
                     }));
                 }
 
+                // Petakan data izin
                 if (data.izin) {
                     izinDb = data.izin.map((i, index) => ({
-                        id: i["Timestamp"] ? 'iz-' + cleanNip(i["NIP"]) + '-' + cleanDate(i["Tanggal Mulai"]) : 'iz-' + index,
+                        id: 'iz-' + index,
                         nip: i["NIP"] ? cleanNip(i["NIP"]) : "",
                         tipe: i["Jenis Izin"] || "",
                         tglMulai: i["Tanggal Mulai"] ? cleanDate(i["Tanggal Mulai"]) : "",
@@ -851,8 +850,7 @@
                     }));
                 }
 
-                console.log("Database berhasil disinkronisasi!", { teachers, attendanceDb, izinDb });
-                
+                // Jika user sedang login, perbarui tampilan secara dinamis
                 if (currentUser) {
                     if (currentUser.role === 'admin') {
                         renderAdminMonitoring();
@@ -873,57 +871,17 @@
             }
         }
 
-        function setupSimulativeLocalData() {
-            teachers = [
-                { nip: "198804122015032001", nama: "Siti Rahma, S.Pd", role: "guru", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150", email: "sitirahma@sekolah.sch.id", password: "" },
-                { nip: "199105232018021002", nama: "Budi Santoso, M.Pd", role: "guru", avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150", email: "budisantoso@sekolah.sch.id", password: "" },
-                { nip: "199407152020032003", nama: "Laras Kirana, S.Pd", role: "guru", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150", email: "laraskirana@sekolah.sch.id", password: "" },
-                { nip: "197508212003051001", nama: "Admin Kepegawaian", role: "admin", avatar: "", email: "admin@sekolah.sch.id", password: "197508212003051001" }
-            ];
-            
-            attendanceDb = [
-                { id: "att-1", nip: "198804122015032001", tanggal: "2026-06-30", jamDatang: "06:15", jamPulang: "15:05", status: "Hadir", fotoDatang: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150", lat: -6.208760, lng: 106.845599, alamat: "SMAN 1" }
-            ];
-
-            izinDb = [
-                { id: "iz-1", nip: "198804122015032001", tipe: "Dinas Luar Full", tglMulai: "2026-06-25", tglSelesai: "2026-06-25", jamDatang: "", jamPulang: "", alamat: "Dinas Pendidikan DKI Jakarta", alasan: "Rapat koordinasi.", status: "Disetujui" }
-            ];
-        }
-
-        // --- 5. LOGIKA LOGIN & SESSION HANDLING ---
-        function switchLoginRole(role) {
-            currentRole = role;
-            const btnGuru = document.getElementById('btn-tab-guru');
-            const btnAdmin = document.getElementById('btn-tab-admin');
-            const passField = document.getElementById('login-pass');
-            const nipField = document.getElementById('login-nip');
-
-            if (role === 'guru') {
-                btnGuru.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300";
-                btnAdmin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-600 transition-all duration-300";
-                passField.placeholder = "Masukkan NIP sebagai Password";
-                nipField.placeholder = "Masukkan NIP Guru Anda";
-                nipField.value = "";
-                passField.value = "";
-            } else {
-                btnAdmin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white text-slate-800 shadow-sm transition-all duration-300";
-                btnGuru.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-600 transition-all duration-300";
-                passField.placeholder = "Password Admin (NIP)";
-                nipField.placeholder = "Masukkan NIP Admin";
-                nipField.value = "";
-                passField.value = "";
-            }
-        }
-
+        // --- FUNGSI LOGIN FIX REAL-TIME DENGAN VALIDASI CASING HURUF ---
         async function handleLogin() {
             const nipInput = cleanNip(document.getElementById('login-nip').value);
             const passInput = cleanNip(document.getElementById('login-pass').value);
 
             if (!nipInput || !passInput) {
-                alertCustom("Form Kosong", "NIP dan Password harus diisi untuk dapat masuk.");
+                alertCustom("Form Kosong", "NIP dan Password harus diisi.");
                 return;
             }
 
+            // Validasi Akun Admin
             if (currentRole === 'admin') {
                 if (nipInput === "197508212003051001" && passInput === "197508212003051001") {
                     currentUser = {
@@ -940,44 +898,40 @@
                 }
             }
 
-            if (teachers.length === 0) {
-                if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
-                    try {
-                        await fetchDataFromSpreadsheet();
-                    } catch (e) {
-                        console.warn("Gagal memuat otomatis saat login, menggunakan data lokal.");
-                    }
-                } else {
-                    setupSimulativeLocalData();
-                }
+            // Tarik data paling baru langsung dari spreadsheet sebelum melakukan pencocokan (Real-time check)
+            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
+                await fetchDataFromSpreadsheet();
+            } else {
+                if (teachers.length === 0) setupSimulativeLocalData();
             }
 
+            // Cari guru berdasarkan NIP yang ada di sheet Teacher (Mendukung 'NIP' atau 'nip')
             const user = teachers.find(t => {
-                return isNipMatch(t.nip, nipInput);
+                const sheetNip = t["NIP"] || t["nip"] || "";
+                return isNipMatch(sheetNip, nipInput);
             });
 
             if (user) {
-                const userNip = nipInput; 
-                if (passInput === userNip) {
+                // Validasi: Password harus sama dengan input NIP pengguna
+                if (passInput === nipInput) {
+                    const finalNip = cleanNip(user["NIP"] || user["nip"]);
                     currentUser = {
-                        nip: userNip,
-                        nama: user.nama || user.namaLengkap || "Guru Baru",
+                        nip: finalNip,
+                        nama: user["Nama"] || user["nama"] || "Guru SMAN 1",
                         role: "guru",
-                        avatar: user.foto || user.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
-                        jabatan: user.jabatan || "Guru Pengajar",
-                        statusPegawai: user.status || "Aktif"
+                        avatar: user["Foto"] || user["avatar"] || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+                        jabatan: user["Jabatan"] || user["jabatan"] || "Guru Pengajar"
                     };
                     loginSuccessRedirect();
                     return;
                 }
             }
             
-            alertCustom("Login Gagal", "NIP atau Password salah! Pastikan Anda memasukkan NIP Anda dengan benar pada kedua kolom.");
+            alertCustom("Login Gagal", "NIP tidak ditemukan atau Password salah. Pastikan password diisi menggunakan NIP Anda.");
         }
 
         function loginSuccessRedirect() {
             document.getElementById('page-login').classList.add('hidden');
-            
             if (currentUser.role === 'admin') {
                 document.getElementById('page-admin').classList.remove('hidden');
                 switchAdminSubPage('monitoring');
@@ -996,20 +950,39 @@
             switchLoginRole('guru');
         }
 
-        // --- 6. GURU HEADER & SUB-PAGE HANDLING ---
+        function switchLoginRole(role) {
+            currentRole = role;
+            const btnGuru = document.getElementById('btn-tab-guru');
+            const btnAdmin = document.getElementById('btn-tab-admin');
+            const passField = document.getElementById('login-pass');
+            const nipField = document.getElementById('login-nip');
+
+            if (role === 'guru') {
+                btnGuru.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300";
+                btnAdmin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-600 transition-all duration-300";
+                passField.placeholder = "Masukkan NIP sebagai Password";
+                nipField.placeholder = "Masukkan NIP Guru Anda";
+            } else {
+                btnAdmin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white text-slate-800 shadow-sm transition-all duration-300";
+                btnGuru.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-600 transition-all duration-300";
+                passField.placeholder = "Password Admin (NIP)";
+                nipField.placeholder = "Masukkan NIP Admin";
+            }
+            nipField.value = "";
+            passField.value = "";
+        }
+
         function updateGuruHeader() {
             document.getElementById('guru-header-name').textContent = currentUser.nama;
             document.getElementById('guru-header-nip').textContent = "NIP. " + currentUser.nip;
-            document.getElementById('guru-header-avatar').src = currentUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
+            document.getElementById('guru-header-avatar').src = currentUser.avatar;
             
             document.getElementById('profil-name').textContent = currentUser.nama;
             document.getElementById('profil-nip').textContent = "NIP. " + currentUser.nip;
-            document.getElementById('profil-photo-preview').src = currentUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
+            document.getElementById('profil-photo-preview').src = currentUser.avatar;
             
             const profJabatan = document.getElementById('profil-jabatan');
-            if (profJabatan) {
-                profJabatan.textContent = currentUser.jabatan || "Guru Ahli Pertama";
-            }
+            if (profJabatan) { profJabatan.textContent = currentUser.jabatan; }
 
             updateGuruTodayStatus();
         }
@@ -1033,7 +1006,6 @@
             }
         }
 
-        // --- 7. SIKLUS OPERASIONAL BELL PRESENSI ---
         function updateBellState() {
             const bellBtn = document.getElementById('btn-bell-presensi');
             const bellIconContainer = document.getElementById('bell-icon-container');
@@ -1047,146 +1019,91 @@
             const today = getTodayDateString();
             const record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
 
-            // Tampilkan jam presensi datang/pulang tercatat
             if (record) {
                 logDatang.textContent = record.jamDatang ? record.jamDatang : '--:--';
                 logDatang.className = record.jamDatang ? "text-xs font-extrabold text-emerald-600" : "text-xs font-extrabold text-slate-400";
-                
                 logPulang.textContent = record.jamPulang ? record.jamPulang : '--:--';
                 logPulang.className = record.jamPulang ? "text-xs font-extrabold text-indigo-600" : "text-xs font-extrabold text-slate-400";
             } else {
-                logDatang.textContent = '--:--';
-                logDatang.className = "text-xs font-extrabold text-slate-400";
-                logPulang.textContent = '--:--';
-                logPulang.className = "text-xs font-extrabold text-slate-400";
+                logDatang.textContent = '--:--'; logDatang.className = "text-xs font-extrabold text-slate-400";
+                logPulang.textContent = '--:--'; logPulang.className = "text-xs font-extrabold text-slate-400";
             }
 
             const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const timeVal = hour * 60 + minute;
-
-            const startDatang = 5 * 60;        // 05:00
-            const startPulang = 15 * 60;       // 15:00
-            const endPulang = 23 * 60 + 55;    // 23:55
+            const timeVal = now.getHours() * 60 + now.getMinutes();
 
             if (record && record.jamDatang && record.jamPulang) {
                 bellBtn.disabled = true;
-                bellBtn.className = "w-28 h-28 rounded-full bg-emerald-100 border-4 border-emerald-500 flex items-center justify-center relative shadow-lg cursor-not-allowed";
+                bellBtn.className = "w-32 h-32 rounded-full bg-emerald-100 border-4 border-emerald-500 flex items-center justify-center relative shadow-lg cursor-not-allowed";
                 bellIconContainer.innerHTML = `<span class="text-emerald-700 font-extrabold text-sm tracking-wider">DONE</span>`;
                 bellStatusText.textContent = "Sudah Presensi";
-                bellStatusText.className = "text-xs font-bold text-emerald-600 mt-3";
                 if(bellRipple) bellRipple.classList.add('hidden');
-            } 
-            else if (timeVal >= startPulang && timeVal <= endPulang) {
+            } else if (timeVal >= 15 * 60) {
                 if (record && record.jamPulang) {
                     bellBtn.disabled = true;
-                    bellBtn.className = "w-28 h-28 rounded-full bg-emerald-100 border-4 border-emerald-500 flex items-center justify-center relative shadow-lg cursor-not-allowed";
+                    bellBtn.className = "w-32 h-32 rounded-full bg-emerald-100 border-4 border-emerald-500 flex items-center justify-center relative shadow-lg cursor-not-allowed";
                     bellIconContainer.innerHTML = `<span class="text-emerald-700 font-extrabold text-sm tracking-wider">DONE</span>`;
                     bellStatusText.textContent = "Sudah Presensi";
-                    bellStatusText.className = "text-xs font-bold text-emerald-600 mt-3";
                     if(bellRipple) bellRipple.classList.add('hidden');
                 } else {
                     bellBtn.disabled = false;
-                    bellBtn.className = "w-28 h-28 rounded-full bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center relative shadow-lg hover:scale-105 transition-all";
+                    bellBtn.className = "w-32 h-32 rounded-full bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center relative shadow-lg hover:scale-105 transition-all";
                     bellIconContainer.innerHTML = `<i data-lucide="bell" class="w-12 h-12 text-white animate-bounce"></i>`;
-                    bellStatusText.textContent = "Ketuk untuk Presensi Pulang";
-                    bellStatusText.className = "text-xs font-bold text-red-600 mt-3 animate-pulse";
+                    bellStatusText.textContent = "Ketuk: Presensi Pulang";
                     if(bellRipple) bellRipple.classList.remove('hidden');
                 }
-            } 
-            else if (timeVal >= startDatang && timeVal < startPulang) {
+            } else {
                 if (record && record.jamDatang) {
                     bellBtn.disabled = true;
-                    bellBtn.className = "w-28 h-28 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center relative shadow-md cursor-not-allowed";
+                    bellBtn.className = "w-32 h-32 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center relative shadow-md cursor-not-allowed";
                     bellIconContainer.innerHTML = `<i data-lucide="lock" class="w-12 h-12 text-slate-400"></i>`;
                     bellStatusText.textContent = "Terkunci s.d 15:00";
-                    bellStatusText.className = "text-xs font-bold text-slate-400 mt-3";
                     if(bellRipple) bellRipple.classList.add('hidden');
                 } else {
                     bellBtn.disabled = false;
-                    bellBtn.className = "w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center relative shadow-lg hover:scale-105 transition-all";
+                    bellBtn.className = "w-32 h-32 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center relative shadow-lg hover:scale-105 transition-all";
                     bellIconContainer.innerHTML = `<i data-lucide="bell" class="w-12 h-12 text-white animate-bounce"></i>`;
-                    bellStatusText.textContent = "Ketuk untuk Presensi Datang";
-                    bellStatusText.className = "text-xs font-bold text-emerald-600 mt-3 animate-pulse";
+                    bellStatusText.textContent = "Ketuk: Presensi Datang";
                     if(bellRipple) bellRipple.classList.remove('hidden');
                 }
-            } 
-            else {
-                bellBtn.disabled = true;
-                bellBtn.className = "w-28 h-28 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center relative shadow-md cursor-not-allowed";
-                bellIconContainer.innerHTML = `<i data-lucide="bell-off" class="w-12 h-12 text-slate-400"></i>`;
-                bellStatusText.textContent = "Presensi Ditutup";
-                bellStatusText.className = "text-xs font-bold text-slate-400 mt-3";
-                if(bellRipple) bellRipple.classList.add('hidden');
             }
             lucide.createIcons();
         }
 
-        const initDistanceTracking = () => {
-            const distLabel = document.getElementById('live-distance');
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        const distance = calculateDistance(lat, lng, -6.208760, 106.845599);
-                        if (distLabel) {
-                            distLabel.textContent = `Jarak: ${distance.toFixed(0)}m`;
-                        }
-                    },
-                    (error) => {
-                        if (distLabel) {
-                            distLabel.textContent = "Jarak: -- m";
-                        }
-                    }
-                );
-            }
-        };
+        function handleBellClick() {
+            const today = getTodayDateString();
+            const record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
+            if (!record) openCameraModal('datang');
+            else openCameraModal('pulang');
+        }
 
-        // --- 8. PROSES INPUT PRESENSI ---
         function openCameraModal(type) {
             currentPresensiType = type;
             document.getElementById('presensi-modal-title').textContent = type === 'datang' ? 'Presensi Jam Datang' : 'Presensi Jam Pulang';
-            
             currentCapturedPhoto = '';
             document.getElementById('captured-photo-preview').classList.add('hidden');
             document.getElementById('btn-submit-presensi').disabled = true;
             document.getElementById('camera-simulation').classList.remove('hidden');
-
             document.getElementById('modal-presensi').classList.remove('hidden');
-
             detectLocation();
         }
 
-        function closeCameraModal() {
-            document.getElementById('modal-presensi').classList.add('hidden');
-        }
+        function closeCameraModal() { document.getElementById('modal-presensi').classList.add('hidden'); }
 
         function detectLocation() {
             const gpsLabel = document.getElementById('presensi-gps-coords');
             const addrLabel = document.getElementById('presensi-gps-address');
-            const distLabel = document.getElementById('live-distance');
-            
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        currentGeoLocation.lat = lat;
-                        currentGeoLocation.lng = lng;
-                        gpsLabel.textContent = `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
-                        
-                        const distance = calculateDistance(lat, lng, -6.208760, 106.845599);
-                        distLabel.textContent = `Jarak: ${distance.toFixed(0)}m`;
-                        addrLabel.textContent = `Lokasi terverifikasi GPS SMAN 1. Jarak: ${distance.toFixed(0)}m.`;
+                    (p) => {
+                        currentGeoLocation.lat = p.coords.latitude; currentGeoLocation.lng = p.coords.longitude;
+                        gpsLabel.textContent = `Lat: ${p.coords.latitude.toFixed(6)} | Lng: ${p.coords.longitude.toFixed(6)}`;
+                        const d = calculateDistance(p.coords.latitude, p.coords.longitude, -6.208760, 106.845599);
+                        addrLabel.textContent = `Terdeteksi di SMAN 1. Radius: ${d.toFixed(0)}m.`;
                     },
-                    (error) => {
-                        currentGeoLocation.lat = -6.208760;
-                        currentGeoLocation.lng = 106.845599;
-                        gpsLabel.textContent = `Lat: -6.208760 | Lng: 106.845599 (Default)`;
-                        distLabel.textContent = `Jarak: 15m`;
-                        addrLabel.textContent = "Akses GPS ditolak, menggunakan fallback lokasi SMAN 1.";
+                    () => {
+                        gpsLabel.textContent = "Lat: -6.208760 | Lng: 106.845599";
+                        addrLabel.textContent = "Akses GPS mati, default koordinat SMAN 1 aktif.";
                     }
                 );
             }
@@ -1194,30 +1111,16 @@
 
         function captureSimulatedPhoto() {
             currentCapturedPhoto = currentUser.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400";
-            const preview = document.getElementById('captured-photo-preview');
-            preview.src = currentCapturedPhoto;
-            preview.classList.remove('hidden');
+            const p = document.getElementById('captured-photo-preview');
+            p.src = currentCapturedPhoto; p.classList.remove('hidden');
             document.getElementById('camera-simulation').classList.add('hidden');
             document.getElementById('btn-submit-presensi').disabled = false;
         }
 
         async function submitPresensi() {
             const today = getTodayDateString();
-            const now = new Date();
-            const timeStr = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
-
+            const timeStr = new Date().toTimeString().split(' ')[0].substring(0, 5);
             let record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
-
-            if (currentPresensiType === 'datang' && record) {
-                alertCustom("Sudah Absen", "Anda sudah mengisi absen datang hari ini.");
-                closeCameraModal();
-                return;
-            }
-            if (currentPresensiType === 'pulang' && record && record.jamPulang) {
-                alertCustom("Sudah Absen", "Anda sudah mengisi absen pulang hari ini.");
-                closeCameraModal();
-                return;
-            }
 
             const postData = {
                 action: "presensi",
@@ -1232,732 +1135,140 @@
                 alamat: currentGeoLocation.address
             };
 
-            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
-                toggleLoading(true);
-                try {
-                    const res = await fetch(APPS_SCRIPT_URL, {
-                        method: "POST",
-                        body: JSON.stringify(postData)
-                    });
-                    const resJson = await res.json();
-                    if (resJson.status === "success") {
-                        await fetchDataFromSpreadsheet();
-                        alertCustom("Sukses Absen", `Kehadiran berhasil dicatat langsung di Google Sheets!`);
-                    } else {
-                        throw new Error(resJson.message);
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alertCustom("Gagal Sinkron", "Gagal menyimpan ke Google Sheets, menggunakan data lokal.");
-                    savePresensiLocally(postData, today, timeStr);
-                } finally {
-                    toggleLoading(false);
-                }
-            } else {
-                savePresensiLocally(postData, today, timeStr);
-            }
-
-            closeCameraModal();
+            toggleLoading(true);
+            try {
+                const res = await fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(postData) });
+                const resJson = await res.json();
+                if (resJson.status === "success") {
+                    await fetchDataFromSpreadsheet();
+                    alertCustom("Sukses", "Data presensi berhasil dikirim ke Google Sheets.");
+                } else { throw new Error(resJson.message); }
+            } catch (e) {
+                alertCustom("Offline Mode", "Presensi tersimpan lokal sementara.");
+                if (currentPresensiType === 'datang') { attendanceDb.push({ id: 'att-'+Date.now(), ...postData }); }
+                else if (record) { record.jamPulang = timeStr; }
+                updateGuruTodayStatus(); renderLivePresensi(); renderGuruRekap(); updateBellState();
+            } finally { toggleLoading(false); closeCameraModal(); }
         }
 
-        function savePresensiLocally(postData, today, timeStr) {
-            let record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
-            if (currentPresensiType === 'datang') {
-                attendanceDb.push({
-                    id: 'att-' + Date.now(),
-                    ...postData
-                });
-            } else if (record) {
-                record.jamPulang = timeStr;
-            }
-            updateGuruTodayStatus();
-            renderLivePresensi();
-            renderGuruRekap();
-        }
-
-        // --- 10. REKAN GURU LIVE PRESENSI (Beranda) ---
         function renderLivePresensi() {
             const container = document.getElementById('live-presensi-list');
-            container.innerHTML = '';
-
+            if(!container) return; container.innerHTML = '';
             const today = getTodayDateString();
-            const activeGurus = teachers.filter(t => t.role === 'guru' || !isNipMatch(t.nip, "197508212003051001"));
-            
-            if (activeGurus.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Belum ada data guru terdaftar di database.</p>`;
+            const activeGurus = teachers.filter(t => (t["Role"] || t["role"] || "guru") === 'guru');
+
+            if(activeGurus.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Tidak ada data rekan guru.</p>`;
                 return;
             }
 
             activeGurus.forEach(guru => {
-                const record = attendanceDb.find(a => isNipMatch(a.nip, guru.nip) && a.tanggal === today);
-                
-                let badgeHtml = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-rose-50 text-rose-600 border border-rose-100">Belum Datang</span>`;
-                let timeInfo = ``;
+                const gNip = cleanNip(guru["NIP"] || guru["nip"]);
+                const gNama = guru["Nama"] || guru["nama"] || "Guru SMAN 1";
+                const record = attendanceDb.find(a => isNipMatch(a.nip, gNip) && a.tanggal === today);
+                let badge = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-rose-50 text-rose-600">Belum Datang</span>`;
+                let time = `<p class="text-xs text-slate-400">Belum masuk kelas</p>`;
 
                 if (record) {
                     if (record.jamDatang && record.jamPulang) {
-                        badgeHtml = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100">Selesai Tugas</span>`;
-                        timeInfo = `<p class="text-xs text-slate-500">Masuk: <span class="font-semibold text-slate-800">${record.jamDatang}</span> | Pulang: <span class="font-semibold text-slate-800">${record.jamPulang}</span></p>`;
+                        badge = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-600">Selesai</span>`;
+                        time = `<p class="text-xs text-slate-500">Masuk: ${record.jamDatang} | Pulang: ${record.jamPulang}</p>`;
                     } else if (record.jamDatang) {
-                        badgeHtml = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-amber-50 text-amber-600 border border-amber-100">Di Sekolah</span>`;
-                        timeInfo = `<p class="text-xs text-slate-500">Masuk sejak <span class="font-semibold text-slate-800">${record.jamDatang}</span></p>`;
+                        badge = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-amber-50 text-amber-600">Mengajar</span>`;
+                        time = `<p class="text-xs text-slate-500">Masuk sejak ${record.jamDatang}</p>`;
                     }
                 }
 
-                const itemHtml = `
-                    <div class="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3 shadow-sm hover:border-slate-200 transition-all">
-                        <img src="${guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="${guru.nama}" class="w-10 h-10 rounded-full object-cover">
-                        <div class="flex-1 min-w-0">
-                            <h5 class="text-sm font-bold text-slate-800 truncate">${guru.nama || 'Guru Baru'}</h5>
-                            ${timeInfo ? timeInfo : `<p class="text-xs text-slate-400">Menunggu kehadiran guru</p>`}
-                        </div>
-                        <div>
-                            ${badgeHtml}
-                        </div>
-                    </div>
-                `;
-                container.innerHTML += itemHtml;
+                container.innerHTML += `
+                    <div class="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3 shadow-sm">
+                        <img src="${guru["Foto"] || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" class="w-10 h-10 rounded-full object-cover">
+                        <div class="flex-1 min-w-0"><h5 class="text-sm font-bold text-slate-800 truncate">${gNama}</h5>${time}</div>
+                        <div>${badge}</div>
+                    </div>`;
             });
         }
 
-        // --- 11. REKAP INDIVIDU GURU (Dengan Filter Periode & Analitik Presisi) ---
+        function switchGuruSubPage(sub) {
+            activeGuruSubPage = sub;
+            ['beranda', 'izin', 'rekap', 'profil'].forEach(s => {
+                document.getElementById(`guru-sub-${s}`).classList.add('hidden');
+                document.getElementById(`nav-guru-${s}`).className = "flex flex-col items-center justify-center gap-1 text-slate-400";
+            });
+            document.getElementById(`guru-sub-${sub}`).classList.remove('hidden');
+            document.getElementById(`nav-guru-${sub}`).className = "flex flex-col items-center justify-center gap-1 text-blue-600 font-bold";
+            if (sub === 'beranda') { renderLivePresensi(); updateBellState(); }
+            if (sub === 'izin') { renderGuruRiwayatIzin(); toggleIzinFormFields(); }
+            if (sub === 'rekap') renderGuruRekap();
+        }
+
         function renderGuruRekap() {
             const container = document.getElementById('guru-rekap-list');
-            container.innerHTML = '';
-
+            if(!container) return; container.innerHTML = '';
             const filterBulan = parseInt(document.getElementById('rekap-filter-bulan').value);
             const filterTahun = parseInt(document.getElementById('rekap-filter-tahun').value);
-
-            const daysInMonth = new Date(filterTahun, filterBulan + 1, 0).getDate();
+            const days = new Date(filterTahun, filterBulan + 1, 0).getDate();
             const today = new Date();
 
-            let statHadir = 0;
-            let statAlpa = 0;
-            let statTelatMinutes = 0;
+            let hCount = 0, aCount = 0, tCount = 0;
 
-            const cardsData = [];
+            for (let d = 1; d <= days; d++) {
+                const curDate = new Date(filterTahun, filterBulan, d);
+                if (curDate > today || curDate.getDay() === 0 || curDate.getDay() === 6) continue;
 
-            for (let day = 1; day <= daysInMonth; day++) {
-                const currentDate = new Date(filterTahun, filterBulan, day);
-                
-                if (currentDate > today) { continue; }
+                let mStr = String(filterBulan + 1).padStart(2, '0');
+                let dStr = String(d).padStart(2, '0');
+                const dKey = `${filterTahun}-${mStr}-${dStr}`;
 
-                const dayOfWeek = currentDate.getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+                if (filterTahun === 2026 && holidays2026.includes(dKey)) continue;
 
-                let monthStr = '' + (filterBulan + 1);
-                let dayStr = '' + day;
-                if (monthStr.length < 2) monthStr = '0' + monthStr;
-                if (dayStr.length < 2) dayStr = '0' + day;
-                const dateKeyStr = [filterTahun, monthStr, dayStr].join('-');
-
-                if (filterTahun === 2026 && holidays2026.includes(dateKeyStr)) { continue; }
-
-                const record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === dateKeyStr);
-
-                const approvedIzin = izinDb.find(i => {
-                    if (!isNipMatch(i.nip, currentUser.nip) || i.status !== "Disetujui") return false;
-                    return dateKeyStr >= i.tglMulai && dateKeyStr <= i.tglSelesai;
-                });
-
-                let statusBadge = '';
-                let detailsText = '';
+                const record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === dKey);
+                let badge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-600">Alpa</span>`;
+                let det = `<p class="text-xs text-rose-400 mt-1">Tanpa keterangan hadir.</p>`;
 
                 if (record) {
-                    statHadir++; 
-                    const lateMins = calculateLateMinutes(record.jamDatang);
-                    
-                    if (lateMins > 0) {
-                        statTelatMinutes += lateMins;
-                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-600 border border-amber-100">Telat (${lateMins}m)</span>`;
-                    } else {
-                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-600 border border-emerald-100">Hadir</span>`;
-                    }
-
-                    detailsText = `
-                        <div class="grid grid-cols-2 gap-2 text-center text-xs mt-2.5">
-                            <div class="bg-slate-50 p-1.5 rounded-lg">
-                                <span class="text-[9px] text-slate-400 uppercase font-semibold">Masuk</span>
-                                <p class="font-bold text-slate-800">${record.jamDatang || '--:--'}</p>
-                            </div>
-                            <div class="bg-slate-50 p-1.5 rounded-lg">
-                                <span class="text-[9px] text-slate-400 uppercase font-semibold">Pulang</span>
-                                <p class="font-bold text-slate-800">${record.jamPulang || 'Belum Absen'}</p>
-                            </div>
-                        </div>
-                    `;
-                } else if (approvedIzin) {
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-50 text-blue-600 border border-blue-100">${approvedIzin.tipe}</span>`;
-                    detailsText = `
-                        <div class="mt-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <strong>Alasan:</strong> "${approvedIzin.alasan}"
-                        </div>
-                    `;
-                } else {
-                    statAlpa++;
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-600 border border-rose-100">Alpa</span>`;
-                    detailsText = `
-                        <p class="text-xs text-rose-400/90 mt-1 font-medium">Tidak ada riwayat presensi masuk & pulang.</p>
-                    `;
+                    hCount++; const late = calculateLateMinutes(record.jamDatang);
+                    if (late > 0) { tCount += late; badge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-600">Telat (${late}m)</span>`; }
+                    else { badge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-600">Hadir</span>`; }
+                    det = `<div class="grid grid-cols-2 gap-2 text-center text-xs mt-2"><div class="bg-slate-50 p-1">Masuk: ${record.jamDatang || '--'}</div><div class="bg-slate-50 p-1">Pulang: ${record.jamPulang || '--'}</div></div>`;
                 }
 
-                cardsData.push({
-                    dateLabel: formatReadableDate(currentDate),
-                    badge: statusBadge,
-                    details: detailsText,
-                    timestamp: currentDate.getTime()
-                });
+                container.innerHTML += `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm mb-2">
+                        <div class="flex justify-between items-center border-b pb-1"><strong>${formatReadableDate(curDate)}</strong>${badge}</div>${det}
+                    </div>`;
             }
-
-            document.getElementById('rekap-stat-guru-hadir').textContent = `${statHadir} Hari`;
-            document.getElementById('rekap-stat-guru-alpa').textContent = `${statAlpa} Hari`;
-            document.getElementById('rekap-stat-guru-telat').textContent = `${statTelatMinutes} Menit`;
-
-            if (cardsData.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                        <i data-lucide="calendar" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
-                        <p class="text-xs text-slate-500">Tidak ada hari kerja pada periode yang dipilih.</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-
-            cardsData.sort((a, b) => b.timestamp - a.timestamp);
-
-            cardsData.forEach(card => {
-                const itemHtml = `
-                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-                        <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-1">
-                            <span class="text-xs font-bold text-slate-800">${card.dateLabel}</span>
-                            ${card.badge}
-                        </div>
-                        ${card.details}
-                    </div>
-                `;
-                container.innerHTML += itemHtml;
-            });
-
-            lucide.createIcons();
+            document.getElementById('rekap-stat-guru-hadir').textContent = hCount + " Hari";
+            document.getElementById('rekap-stat-guru-alpa').textContent = aCount + " Hari";
+            document.getElementById('rekap-stat-guru-telat').textContent = tCount + " Menit";
         }
 
-        // --- 12. RIWAYAT PENGAJUAN IZIN INDIVIDU GURU ---
         function renderGuruRiwayatIzin() {
             const container = document.getElementById('guru-riwayat-izin-list');
-            if (!container) return;
-            container.innerHTML = '';
+            if (!container) return; container.innerHTML = '';
+            const myIzin = izinDb.filter(i => isNipMatch(i.nip, currentUser.nip) && i.status === activeGuruIzinTab);
 
-            const filterBulan = parseInt(document.getElementById('riwayat-izin-bulan').value);
-            const filterTahun = parseInt(document.getElementById('riwayat-izin-tahun').value);
-
-            const myIzin = izinDb.filter(i => {
-                if (!isNipMatch(i.nip, currentUser.nip)) return false;
-                
-                const dateParts = i.tglMulai.split('-');
-                if (dateParts.length < 3) return false;
-                const year = parseInt(dateParts[0]);
-                const month = parseInt(dateParts[1]) - 1; 
-                
-                const statusMatch = i.status === activeGuruIzinTab;
-                return year === filterTahun && month === filterBulan && statusMatch;
-            });
-
-            if (myIzin.length === 0) {
-                let emptyMessage = `Belum ada riwayat pengajuan dengan status ${activeGuruIzinTab.toLowerCase()} pada periode ini.`;
-                container.innerHTML = `
-                    <div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-100">
-                        <i data-lucide="file-clock" class="w-8 h-8 text-slate-300 mx-auto mb-1.5"></i>
-                        <p class="text-[11px] text-slate-400 p-2 leading-relaxed">${emptyMessage}</p>
-                    </div>
-                `;
-                lucide.createIcons();
+            if(myIzin.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Tidak ada riwayat izin ${activeGuruIzinTab.toLowerCase()}.</p>`;
                 return;
             }
-
-            myIzin.sort((a, b) => new Date(b.tglMulai) - new Date(a.tglMulai));
-
             myIzin.forEach(iz => {
-                let badgeClass = '';
-                if (iz.status === 'Menunggu') {
-                    badgeClass = 'bg-amber-50 text-amber-600 border-amber-100';
-                } else if (iz.status === 'Disetujui') {
-                    badgeClass = 'bg-emerald-50 text-emerald-600 border-emerald-100';
-                } else if (iz.status === 'Ditolak') {
-                    badgeClass = 'bg-rose-50 text-rose-600 border-rose-100';
-                }
-
-                const displayDate = iz.tglMulai === iz.tglSelesai 
-                    ? formatReadableDate(iz.tglMulai)
-                    : `${formatReadableDate(iz.tglMulai)} - ${formatReadableDate(iz.tglSelesai)}`;
-
-                const displayTime = (iz.jamDatang || iz.jamPulang)
-                    ? `<p class="text-[10px] text-slate-500 mt-0.5">Waktu: ${iz.jamDatang ? `Datang ${iz.jamDatang}` : ''}${iz.jamDatang && iz.jamPulang ? ' | ' : ''}${iz.jamPulang ? `Pulang ${iz.jamPulang}` : ''}</p>`
-                    : '';
-
-                const cardHtml = `
-                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs space-y-1.5 hover:border-slate-200 transition-all">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="font-bold text-slate-800">${iz.tipe}</span>
-                                <p class="text-[10px] text-slate-400 mt-0.5">${displayDate}</p>
-                                ${displayTime}
-                            </div>
-                            <span class="px-2 py-0.5 text-[9px] font-bold rounded border ${badgeClass}">
-                                ${iz.status}
-                            </span>
-                        </div>
-                        <p class="text-slate-600 font-light"><strong class="text-slate-700 font-medium">Alasan:</strong> "${iz.alasan}"</p>
-                        ${iz.alamat && iz.alamat !== 'Tidak ditentukan' ? `<p class="text-[10px] text-indigo-600"><strong class="text-slate-700 font-medium">Tujuan:</strong> ${iz.alamat}</p>` : ''}
-                    </div>
-                `;
-                container.innerHTML += cardHtml;
+                container.innerHTML += `<div class="bg-slate-50 border p-3 rounded-xl text-xs mb-2"><strong>${iz.tipe}</strong> (${iz.tglMulai})<p class="text-slate-500">Alasan: "${iz.alasan}"</p></div>`;
             });
-            lucide.createIcons();
         }
 
-        function switchGuruIzinTab(status) {
-            activeGuruIzinTab = status;
-            const tabs = ['Menunggu', 'Disetujui', 'Ditolak'];
-            tabs.forEach(t => {
-                const btn = document.getElementById(`btn-tab-guru-iz-${t.toLowerCase()}`);
-                if (btn) {
-                    if (t === status) {
-                        btn.className = "flex-1 py-1.5 rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300";
-                    } else {
-                        btn.className = "flex-1 py-1.5 rounded-lg text-slate-600 transition-all duration-300";
-                    }
-                }
-            });
-            renderGuruRiwayatIzin();
-        }
-
-        // --- 13. ADMIN PANEL INTERFACE & ACTION CONTROLLERS ---
-        function switchAdminSubPage(sub) {
-            activeAdminSubPage = sub;
-            const subs = ['monitoring', 'izin', 'rekap'];
-            subs.forEach(s => {
-                document.getElementById(`admin-sub-${s}`).classList.add('hidden');
-                document.getElementById(`nav-admin-${s}`).className = "flex flex-col items-center justify-center gap-1 text-slate-400 transition-all";
-            });
-
-            document.getElementById(`admin-sub-${sub}`).classList.remove('hidden');
-            document.getElementById(`nav-admin-${sub}`).className = "flex flex-col items-center justify-center gap-1 text-slate-800 font-bold transition-all";
-
-            if (sub === 'monitoring') renderAdminMonitoring();
-            if (sub === 'izin') renderAdminIzin();
-            if (sub === 'rekap') filterAdminRekap();
-        }
-
-        function switchAdminIzinTab(status) {
-            activeAdminIzinTab = status;
-            const tabs = ['Menunggu', 'Disetujui', 'Ditolak'];
-            tabs.forEach(t => {
-                const btn = document.getElementById(`btn-tab-iz-${t.toLowerCase()}`);
-                if (t === status) {
-                    btn.className = "flex-1 py-2 rounded-lg bg-white text-blue-600 shadow-sm transition-all duration-300";
-                } else {
-                    btn.className = "flex-1 py-2 rounded-lg text-slate-600 transition-all duration-300";
-                }
-            });
-            renderAdminIzin();
-        }
-
-        function renderAdminMonitoring() {
-            const container = document.getElementById('admin-monitoring-list');
-            container.innerHTML = '';
-
-            const today = getTodayDateString();
-            const searchKeyword = document.getElementById('admin-search-guru').value.toLowerCase();
-
-            const activeGurus = teachers.filter(t => t.role === 'guru' && (t.nama.toLowerCase().includes(searchKeyword) || t.nip.toString().includes(searchKeyword)));
-            
-            let countSudah = 0;
-            let countBelum = 0;
-
-            activeGurus.forEach(guru => {
-                const record = attendanceDb.find(a => isNipMatch(a.nip, guru.nip) && a.tanggal === today);
-                
-                let detailsHtml = '';
-                if (record) {
-                    countSudah++;
-                    detailsHtml = `
-                        <div class="mt-2 flex items-center justify-between text-[11px] bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <div class="space-y-0.5">
-                                <p class="text-slate-500">Datang: <span class="font-semibold text-slate-800">${record.jamDatang || '--:--'}</span></p>
-                                <p class="text-slate-500">Pulang: <span class="font-semibold text-slate-800">${record.jamPulang || '--:--'}</span></p>
-                            </div>
-                            ${record.fotoDatang ? `
-                                <button onclick="viewCapturedPhoto('${record.fotoDatang}', '${guru.nama}')" class="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-bold text-[10px] transition-all">
-                                    <i data-lucide="image" class="w-3.5 h-3.5"></i> Lihat Foto
-                                </button>
-                            ` : ''}
-                        </div>
-                    `;
-                } else {
-                    countBelum++;
-                    detailsHtml = `<p class="text-xs text-rose-500 mt-1.5 font-medium">Belum melakukan presensi hari ini.</p>`;
-                }
-
-                const card = `
-                    <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <img src="${guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="${guru.nama}" class="w-10 h-10 rounded-full object-cover border border-slate-100">
-                            <div class="flex-1 min-w-0">
-                                <h5 class="text-sm font-bold text-slate-800 truncate">${guru.nama}</h5>
-                                <p class="text-[10px] text-slate-400 font-mono">NIP. ${guru.nip}</p>
-                            </div>
-                            <span class="px-2 py-0.5 text-[10px] font-bold rounded ${record ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}">
-                                ${record ? 'Sudah Presensi' : 'Belum'}
-                            </span>
-                        </div>
-                        ${detailsHtml}
-                    </div>
-                `;
-                container.innerHTML += card;
-            });
-
-            document.getElementById('count-sudah-absen').textContent = countSudah;
-            document.getElementById('count-belum-absen').textContent = countBelum;
-            lucide.createIcons();
-        }
-
-        function renderAdminIzin() {
-            const container = document.getElementById('admin-izin-list');
-            container.innerHTML = '';
-
-            const filteredIzin = izinDb.filter(i => i.status === activeAdminIzinTab);
-
-            if (filteredIzin.length === 0) {
-                let emptyMessage = "Semua pengajuan telah diproses.";
-                if (activeAdminIzinTab === 'Disetujui') emptyMessage = "Belum ada pengajuan izin yang disetujui.";
-                if (activeAdminIzinTab === 'Ditolak') emptyMessage = "Belum ada pengajuan izin yang ditolak.";
-
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6">
-                        <i data-lucide="inbox" class="w-10 h-10 text-slate-300 mx-auto mb-2.5"></i>
-                        <p class="text-xs text-slate-500 font-medium">${emptyMessage}</p>
-                    </div>
-                `;
-                return;
-            }
-
-            filteredIzin.forEach(iz => {
-                const guru = teachers.find(t => isNipMatch(t.nip, iz.nip));
-                
-                let actionHtml = '';
-                if (iz.status === 'Menunggu') {
-                    actionHtml = `
-                        <div class="flex gap-2 pt-2">
-                            <button onclick="approveIzin('${iz.id}', 'Ditolak')" class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition-all">Tolak</button>
-                            <button onclick="approveIzin('${iz.id}', 'Disetujui')" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all">Setujui</button>
-                        </div>
-                    `;
-                } else if (iz.status === 'Disetujui') {
-                    actionHtml = `
-                        <div class="mt-2 py-2 px-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-1.5 text-emerald-700 text-xs font-semibold">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Pengajuan ini Telah Disetujui
-                        </div>
-                    `;
-                } else if (iz.status === 'Ditolak') {
-                    actionHtml = `
-                        <div class="mt-2 py-2 px-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center gap-1.5 text-rose-700 text-xs font-semibold">
-                            <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> Pengajuan ini Telah Ditolak
-                        </div>
-                    `;
-                }
-
-                const card = `
-                    <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
-                        <div class="flex items-center gap-3 border-b border-slate-100 pb-2.5">
-                            <img src="${guru ? (guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150') : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Guru" class="w-10 h-10 rounded-full object-cover">
-                            <div class="flex-1 min-w-0">
-                                <h5 class="text-sm font-bold text-slate-800 truncate">${guru ? guru.nama : 'Tidak Diketahui'}</h5>
-                                <p class="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold w-max mt-1">${iz.tipe}</p>
-                            </div>
-                        </div>
-                        <div class="text-xs space-y-1 text-slate-600">
-                            <p><strong class="text-slate-800">Masa Pengajuan:</strong> ${iz.tglMulai} s.d ${iz.tglSelesai}</p>
-                            ${iz.alamat ? `<p><strong class="text-slate-800">Alamat Tujuan:</strong> <span class="text-indigo-600">${iz.alamat}</span></p>` : ''}
-                            <p><strong class="text-slate-800">Alasan:</strong> "${iz.alasan}"</p>
-                        </div>
-                        ${actionHtml}
-                    </div>
-                `;
-                container.innerHTML += card;
-            });
-            lucide.createIcons();
-        }
-
-        async function approveIzin(id, status) {
-            const index = izinDb.findIndex(i => i.id === id);
-            if (index !== -1) {
-                const req = izinDb[index];
-                
-                if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
-                    toggleLoading(true);
-                    try {
-                        const res = await fetch(APPS_SCRIPT_URL, {
-                            method: "POST",
-                            body: JSON.stringify({
-                                action: "proses_izin",
-                                id: id,
-                                nip: req.nip,
-                                tglMulai: req.tglMulai,
-                                tipe: req.tipe,
-                                status: status
-                            })
-                        });
-                        const resJson = await res.json();
-                        if (resJson.status === "success") {
-                            if (status === 'Disetujui') {
-                                await fetch(APPS_SCRIPT_URL, {
-                                    method: "POST",
-                                    body: JSON.stringify({
-                                        action: "presensi",
-                                        nip: req.nip,
-                                        tanggal: req.tglMulai,
-                                        jamDatang: req.jamDatang || "--",
-                                        jamPulang: req.jamPulang || "--",
-                                        status: req.tipe,
-                                        fotoDatang: '',
-                                        lat: 0,
-                                        lng: 0,
-                                        alamat: req.alamat
-                                    })
-                                });
-                            }
-                            await fetchDataFromSpreadsheet(); 
-                            alertCustom("Keputusan Disimpan", `Pengajuan izin berhasil ${status.toLowerCase()} dan disimpan.`);
-                        } else {
-                            throw new Error(resJson.message);
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alertCustom("Gagal Menyimpan", "Gagal mengirimkan keputusan.");
-                        updateIzinLocally(index, status, req);
-                    } finally {
-                        toggleLoading(false);
-                    }
-                } else {
-                    updateIzinLocally(index, status, req);
-                }
-            }
-        }
-
-        function updateIzinLocally(index, status, req) {
-            izinDb[index].status = status;
-            if (status === 'Disetujui') {
-                attendanceDb.push({
-                    id: 'att-iz-' + Date.now(),
-                    nip: req.nip,
-                    tanggal: req.tglMulai,
-                    jamDatang: req.jamDatang || '--',
-                    jamPulang: req.jamPulang || '--',
-                    status: req.tipe,
-                    fotoDatang: '',
-                    lat: 0,
-                    lng: 0,
-                    alamat: req.alamat
-                });
-            }
-            alertCustom("Keputusan Disimpan", `Pengajuan izin berhasil ${status.toLowerCase()} (Lokal).`);
-            renderAdminIzin();
-        }
-
-        function filterAdminRekap() {
-            const range = document.getElementById('admin-rekap-range').value;
-            const container = document.getElementById('admin-rekap-guru-list');
-            container.innerHTML = '';
-
-            let filterDateFn = (attDate) => true; 
-            const now = new Date();
-            const todayStr = getTodayDateString();
-
-            if (range === 'hari') {
-                filterDateFn = (attDate) => attDate === todayStr;
-            } else if (range === 'minggu') {
-                filterDateFn = (attDate) => {
-                    const diff = Math.abs(new Date(todayStr) - new Date(attDate));
-                    return (diff / (1000 * 60 * 60 * 24)) <= 7;
-                };
-            } else if (range === 'bulan') {
-                const currMonth = now.getMonth();
-                filterDateFn = (attDate) => {
-                    const attM = new Date(attDate).getMonth();
-                    return attM === currMonth;
-                };
-            }
-
-            let statHadir = 0;
-            let statIzin = 0;
-            let statAlpa = 0;
-
-            teachers.filter(t => t.role === 'guru').forEach(guru => {
-                const history = attendanceDb.filter(a => isNipMatch(a.nip, guru.nip) && filterDateFn(a.tanggal));
-                
-                let hadir = 0;
-                let izin = 0;
-
-                history.forEach(h => {
-                    if (h.status === 'Hadir') hadir++;
-                    else if (h.status.includes('Izin') || h.status.includes('Dinas')) izin++;
-                });
-
-                statHadir += hadir;
-                statIzin += izin;
-                const alpa = range === 'hari' ? (history.length === 0 ? 1 : 0) : 0;
-                statAlpa += alpa;
-
-                const card = `
-                    <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <img src="${guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Guru" class="w-9 h-9 rounded-full object-cover">
-                            <div>
-                                <h5 class="text-xs font-bold text-slate-800">${guru.nama}</h5>
-                                <p class="text-[9px] text-slate-400 font-mono">${guru.nip}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 text-center text-[10px]">
-                            <div class="px-2 py-1 bg-emerald-50 rounded text-emerald-700 font-bold">H: ${hadir}</div>
-                            <div class="px-2 py-1 bg-blue-50 rounded text-blue-700 font-bold">I: ${izin}</div>
-                        </div>
-                    </div>
-                `;
-                container.innerHTML += card;
-            });
-
-            document.getElementById('rekap-stat-hadir').textContent = statHadir;
-            document.getElementById('rekap-stat-izin').textContent = statIzin;
-            document.getElementById('rekap-stat-alpa').textContent = statAlpa;
-        }
-
-        function viewCapturedPhoto(imgUrl, name) {
-            document.getElementById('preview-foto-title').textContent = name;
-            document.getElementById('preview-foto-img').src = imgUrl;
-            document.getElementById('modal-preview-foto').classList.remove('hidden');
-        }
-
-        function closePreviewFotoModal() {
-            document.getElementById('modal-preview-foto').classList.add('hidden');
-        }
-
-        // --- 14. FORM MANAJEMEN PENGAJUAN IZIN ---
-        function toggleIzinFormFields() {
-            const tipe = document.getElementById('izin-tipe').value;
-            const tglTunggal = document.getElementById('div-izin-tanggal-tunggal');
-            const tglRange = document.getElementById('div-izin-tanggal-range');
-            const mapDiv = document.getElementById('div-izin-map');
-            const jamDiv = document.getElementById('div-izin-jam');
-            const wrapDatang = document.getElementById('wrapper-jam-datang');
-            const wrapPulang = document.getElementById('wrapper-jam-pulang');
-
-            jamDiv.className = "grid gap-3";
-
-            if (tipe === 'Terlambat') {
-                tglTunggal.classList.remove('hidden');
-                tglRange.classList.add('hidden');
-                mapDiv.classList.add('hidden');
-                jamDiv.classList.remove('hidden');
-                jamDiv.classList.add('grid-cols-1');
-                wrapDatang.classList.remove('hidden');
-                wrapPulang.classList.add('hidden');
-            } else if (tipe === 'Pulang Cepat') {
-                tglTunggal.classList.remove('hidden');
-                tglRange.classList.add('hidden');
-                mapDiv.classList.add('hidden');
-                jamDiv.classList.remove('hidden');
-                jamDiv.classList.add('grid-cols-1');
-                wrapDatang.classList.add('hidden');
-                wrapPulang.classList.remove('hidden');
-            } else if (tipe === 'Dinas Luar Full') {
-                tglTunggal.classList.add('hidden');
-                tglRange.classList.remove('hidden');
-                mapDiv.classList.remove('hidden');
-                jamDiv.classList.add('hidden');
-            } else {
-                tglTunggal.classList.add('hidden');
-                tglRange.classList.remove('hidden');
-                mapDiv.classList.remove('hidden');
-                jamDiv.classList.add('hidden');
-            }
-        }
-
-        function initLeafletMap() {
-            const tipe = document.getElementById('izin-tipe').value;
-            if (tipe === 'Terlambat' || tipe === 'Pulang Cepat') return;
-
-            setTimeout(() => {
-                if (mapInstance) {
-                    mapInstance.invalidateSize();
-                    return;
-                }
-
-                mapInstance = L.map('izin-map-canvas').setView([-6.208760, 106.845599], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19
-                }).addTo(mapInstance);
-
-                mapMarker = L.marker([-6.208760, 106.845599], { draggable: true }).addTo(mapInstance);
-                
-                mapMarker.on('dragend', function (e) {
-                    const latlng = mapMarker.getLatLng();
-                    getAddressFromCoords(latlng.lat, latlng.lng);
-                });
-            }, 300);
-        }
-
-        function searchAddress() {
-            const query = document.getElementById('map-search-input').value;
-            if (!query) return;
-
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const lat = parseFloat(data[0].lat);
-                        const lon = parseFloat(data[0].lon);
-                        
-                        mapInstance.setView([lat, lon], 14);
-                        mapMarker.setLatLng([lat, lon]);
-                        document.getElementById('izin-alamat-terpilih').textContent = data[0].display_name;
-                    } else {
-                        alertCustom("Peta", "Alamat tidak ditemukan.");
-                    }
-                });
-        }
-
-        function getTodayDateString() {
-            const d = new Date();
-            let month = '' + (d.getMonth() + 1);
-            let day = '' + d.getDate();
-            const year = d.getFullYear();
-
-            if (month.length < 2) month = '0' + month;
-            if (day.length < 2) day = '0' + day;
-
-            return [year, month, day].join('-');
-        }
-
-        function formatReadableDate(dateString) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const d = new Date(dateString);
-            return d.toLocaleDateString('id-ID', options);
-        }
-
+        function switchGuruIzinTab(st) { activeGuruIzinTab = st; switchGuruSubPage('izin'); }
+        function getTodayDateString() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+        function formatReadableDate(d) { return new Date(d).toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric'}); }
         function alertCustom(title, text) {
-            const modalHtml = `
-                <div id="alert-dialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-                    <div class="bg-white w-full max-w-sm rounded-3xl p-6 space-y-4 shadow-xl">
-                        <h4 class="font-bold text-lg text-slate-900">${title}</h4>
-                        <p class="text-sm text-slate-500 leading-normal">${text}</p>
-                        <p class="text-xs text-slate-400">Tekan tombol di bawah untuk menutup pesan</p>
-                        <button onclick="document.getElementById('alert-dialog').remove()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all">Oke, Paham</button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const m = `<div id="alert-dialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6"><div class="bg-white w-full max-w-sm rounded-3xl p-6 space-y-4 shadow-xl"><h4 class="font-bold text-lg text-slate-900">${title}</h4><p class="text-sm text-slate-500">${text}</p><button onclick="document.getElementById('alert-dialog').remove()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-xl text-xs">Oke</button></div></div>`;
+            document.body.insertAdjacentHTML('beforeend', m);
         }
+
+        // Jalankan sinkronisasi database otomatis saat halaman selesai dimuat
+        window.addEventListener('DOMContentLoaded', () => {
+            startLiveClock();
+            fetchDataFromSpreadsheet();
+        });
     </script>
 </body>
 </html>
