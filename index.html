@@ -802,7 +802,7 @@
         }
 
         // --- 4. SINKRONISASI DATABASE GOOGLE SHEETS & LOCAL DATA ---
-        async function fetchDataFromSpreadsheet() {
+        async function fetchDataFromSpreadsheet(force = false) {
             if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("example")) {
                 console.warn("Aplikasi berjalan dalam mode simulasi offline.");
                 setupSimulativeLocalData(); 
@@ -811,7 +811,8 @@
 
             toggleLoading(true);
             try {
-                const response = await fetch(APPS_SCRIPT_URL);
+                const url = force ? `${APPS_SCRIPT_URL}?_=${Date.now()}` : APPS_SCRIPT_URL;
+                const response = await fetch(url);
                 if (!response.ok) throw new Error("Gagal mengambil data.");
                 
                 const data = await response.json();
@@ -939,40 +940,40 @@
                 }
             }
 
-            // Memuat database secara asinkronus (tidak menghalangi proses perpindahan)
-            if (teachers.length === 0) {
-                if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
-                    try {
-                        await fetchDataFromSpreadsheet();
-                    } catch (e) {
-                        console.warn("Gagal memuat otomatis saat login, menggunakan data lokal.");
-                    }
-                } else {
-                    setupSimulativeLocalData();
+            // Memaksa pengambilan data real-time langsung saat klik login (Bypass Cache)
+            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
+                try {
+                    await fetchDataFromSpreadsheet(true);
+                } catch (e) {
+                    console.warn("Gagal memuat otomatis saat login, menggunakan data lokal.");
                 }
+            } else {
+                if (teachers.length === 0) setupSimulativeLocalData();
             }
 
+            // Cari guru berdasarkan NIP yang ada di sheet Teacher (Mendukung 'NIP' atau 'nip')
             const user = teachers.find(t => {
-                return isNipMatch(t.nip, nipInput);
+                const sheetNip = t["NIP"] || t["nip"] || "";
+                return isNipMatch(sheetNip, nipInput);
             });
 
             if (user) {
-                const userNip = nipInput; 
-                if (passInput === userNip) {
+                // Validasi: Password harus sama dengan input NIP pengguna
+                if (passInput === nipInput) {
+                    const finalNip = cleanNip(user["NIP"] || user["nip"]);
                     currentUser = {
-                        nip: userNip,
-                        nama: user.nama || user.namaLengkap || "Guru Baru",
+                        nip: finalNip,
+                        nama: user["Nama Lengkap"] || user["nama lengkap"] || user["Nama"] || user["nama"] || "Guru SMAN 1",
                         role: "guru",
-                        avatar: user.foto || user.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
-                        jabatan: user.jabatan || "Guru Pengajar",
-                        statusPegawai: user.status || "Aktif"
+                        avatar: user["Foto Avatar"] || user["foto avatar"] || user["Foto"] || user["foto"] || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+                        jabatan: user["Jabatan"] || user["jabatan"] || "Guru Pengajar"
                     };
                     loginSuccessRedirect();
                     return;
                 }
             }
             
-            alertCustom("Login Gagal", "NIP atau Password salah! Pastikan Anda memasukkan NIP Anda dengan benar pada kedua kolom.");
+            alertCustom("Login Gagal", "NIP tidak ditemukan atau Password salah. Pastikan password diisi menggunakan NIP Anda.");
         }
 
         function loginSuccessRedirect() {
@@ -1000,15 +1001,15 @@
         function updateGuruHeader() {
             document.getElementById('guru-header-name').textContent = currentUser.nama;
             document.getElementById('guru-header-nip').textContent = "NIP. " + currentUser.nip;
-            document.getElementById('guru-header-avatar').src = currentUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
+            document.getElementById('guru-header-avatar').src = currentUser.avatar;
             
             document.getElementById('profil-name').textContent = currentUser.nama;
             document.getElementById('profil-nip').textContent = "NIP. " + currentUser.nip;
-            document.getElementById('profil-photo-preview').src = currentUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
+            document.getElementById('profil-photo-preview').src = currentUser.avatar;
             
             const profJabatan = document.getElementById('profil-jabatan');
             if (profJabatan) {
-                profJabatan.textContent = currentUser.jabatan || "Guru Ahli Pertama";
+                profJabatan.textContent = currentUser.jabatan;
             }
 
             updateGuruTodayStatus();
@@ -1122,7 +1123,7 @@
                 if (record && record.jamDatang) {
                     bellBtn.disabled = true;
                     bellBtn.className = "w-28 h-28 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center relative shadow-md cursor-not-allowed";
-                    bellIconContainer.innerHTML = `<i data-lucide="bell-off" class="w-12 h-12 text-slate-400"></i>`;
+                    bellIconContainer.innerHTML = `<i data-lucide="lock" class="w-12 h-12 text-slate-400"></i>`;
                     bellStatusText.textContent = "Terkunci s.d 15:00";
                     bellStatusText.className = "text-xs font-bold text-slate-400 mt-3";
                     if(bellRipple) bellRipple.classList.add('hidden');
@@ -1146,6 +1147,7 @@
             lucide.createIcons();
         }
 
+        // Logika Klik Lonceng: Otomatis memicu pembukaan kamera presensi
         function handleBellClick() {
             const now = new Date();
             const hour = now.getHours();
@@ -1167,165 +1169,13 @@
             }
         }
 
-        const initDistanceTracking = () => {
-            const distLabel = document.getElementById('live-distance');
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        const distance = calculateDistance(lat, lng, -6.208760, 106.845599);
-                        if (distLabel) {
-                            distLabel.textContent = `Jarak: ${distance.toFixed(0)}m`;
-                        }
-                    },
-                    (error) => {
-                        if (distLabel) {
-                            distLabel.textContent = "Jarak: -- m";
-                        }
-                    }
-                );
-            }
-        };
-
-        // --- 8. PROSES INPUT PRESENSI ---
-        function openCameraModal(type) {
-            currentPresensiType = type;
-            document.getElementById('presensi-modal-title').textContent = type === 'datang' ? 'Presensi Jam Datang' : 'Presensi Jam Pulang';
-            
-            currentCapturedPhoto = '';
-            document.getElementById('captured-photo-preview').classList.add('hidden');
-            document.getElementById('btn-submit-presensi').disabled = true;
-            document.getElementById('camera-simulation').classList.remove('hidden');
-
-            document.getElementById('modal-presensi').classList.remove('hidden');
-
-            detectLocation();
-        }
-
-        function closeCameraModal() {
-            document.getElementById('modal-presensi').classList.add('hidden');
-        }
-
-        function detectLocation() {
-            const gpsLabel = document.getElementById('presensi-gps-coords');
-            const addrLabel = document.getElementById('presensi-gps-address');
-            const distLabel = document.getElementById('live-distance');
-            
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        currentGeoLocation.lat = lat;
-                        currentGeoLocation.lng = lng;
-                        gpsLabel.textContent = `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
-                        
-                        const distance = calculateDistance(lat, lng, -6.208760, 106.845599);
-                        distLabel.textContent = `Jarak: ${distance.toFixed(0)}m`;
-                        addrLabel.textContent = `Lokasi terverifikasi GPS SMAN 1. Jarak: ${distance.toFixed(0)}m.`;
-                    },
-                    (error) => {
-                        currentGeoLocation.lat = -6.208760;
-                        currentGeoLocation.lng = 106.845599;
-                        gpsLabel.textContent = `Lat: -6.208760 | Lng: 106.845599 (Default)`;
-                        distLabel.textContent = `Jarak: 15m`;
-                        addrLabel.textContent = "Akses GPS ditolak, menggunakan fallback lokasi SMAN 1.";
-                    }
-                );
-            }
-        }
-
-        function captureSimulatedPhoto() {
-            currentCapturedPhoto = currentUser.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400";
-            const preview = document.getElementById('captured-photo-preview');
-            preview.src = currentCapturedPhoto;
-            preview.classList.remove('hidden');
-            document.getElementById('camera-simulation').classList.add('hidden');
-            document.getElementById('btn-submit-presensi').disabled = false;
-        }
-
-        async function submitPresensi() {
-            const today = getTodayDateString();
-            const now = new Date();
-            const timeStr = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
-
-            let record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
-
-            if (currentPresensiType === 'datang' && record) {
-                alertCustom("Sudah Absen", "Anda sudah mengisi absen datang hari ini.");
-                closeCameraModal();
-                return;
-            }
-            if (currentPresensiType === 'pulang' && record && record.jamPulang) {
-                alertCustom("Sudah Absen", "Anda sudah mengisi absen pulang hari ini.");
-                closeCameraModal();
-                return;
-            }
-
-            const postData = {
-                action: "presensi",
-                nip: currentUser.nip,
-                tanggal: today,
-                jamDatang: currentPresensiType === 'datang' ? timeStr : (record ? record.jamDatang : ""),
-                jamPulang: currentPresensiType === 'pulang' ? timeStr : "",
-                status: 'Hadir',
-                fotoDatang: currentCapturedPhoto,
-                lat: currentGeoLocation.lat,
-                lng: currentGeoLocation.lng,
-                alamat: currentGeoLocation.address
-            };
-
-            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("example")) {
-                toggleLoading(true);
-                try {
-                    const res = await fetch(APPS_SCRIPT_URL, {
-                        method: "POST",
-                        body: JSON.stringify(postData)
-                    });
-                    const resJson = await res.json();
-                    if (resJson.status === "success") {
-                        await fetchDataFromSpreadsheet();
-                        alertCustom("Sukses Absen", `Kehadiran berhasil dicatat langsung di Google Sheets!`);
-                    } else {
-                        throw new Error(resJson.message);
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alertCustom("Gagal Sinkron", "Gagal menyimpan ke Google Sheets, menggunakan data lokal.");
-                    savePresensiLocally(postData, today, timeStr);
-                } finally {
-                    toggleLoading(false);
-                }
-            } else {
-                savePresensiLocally(postData, today, timeStr);
-            }
-
-            closeCameraModal();
-        }
-
-        function savePresensiLocally(postData, today, timeStr) {
-            let record = attendanceDb.find(a => isNipMatch(a.nip, currentUser.nip) && a.tanggal === today);
-            if (currentPresensiType === 'datang') {
-                attendanceDb.push({
-                    id: 'att-' + Date.now(),
-                    ...postData
-                });
-            } else if (record) {
-                record.jamPulang = timeStr;
-            }
-            updateGuruTodayStatus();
-            renderLivePresensi();
-            renderGuruRekap();
-        }
-
         // --- 10. REKAN GURU LIVE PRESENSI (Beranda) ---
         function renderLivePresensi() {
             const container = document.getElementById('live-presensi-list');
             container.innerHTML = '';
 
             const today = getTodayDateString();
-            const activeGurus = teachers.filter(t => t.role === 'guru' || !isNipMatch(t.nip, "197508212003051001"));
+            const activeGurus = teachers.filter(t => (t.role || "guru") === 'guru');
             
             if (activeGurus.length === 0) {
                 container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Belum ada data guru terdaftar di database.</p>`;
@@ -1333,7 +1183,8 @@
             }
 
             activeGurus.forEach(guru => {
-                const record = attendanceDb.find(a => isNipMatch(a.nip, guru.nip) && a.tanggal === today);
+                const gNip = cleanNip(guru.nip);
+                const record = attendanceDb.find(a => isNipMatch(a.nip, gNip) && a.tanggal === today);
                 
                 let badgeHtml = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-rose-50 text-rose-600 border border-rose-100">Belum Datang</span>`;
                 let timeInfo = ``;
@@ -1413,9 +1264,9 @@
                     
                     if (lateMins > 0) {
                         statTelatMinutes += lateMins;
-                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-600 border border-amber-100">Telat (${lateMins}m)</span>`;
+                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-600">Telat (${lateMins}m)</span>`;
                     } else {
-                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-600 border border-emerald-100">Hadir</span>`;
+                        statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-50 text-emerald-600">Hadir</span>`;
                     }
 
                     detailsText = `
@@ -1431,7 +1282,7 @@
                         </div>
                     `;
                 } else if (approvedIzin) {
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-50 text-blue-600 border border-blue-100">${approvedIzin.tipe}</span>`;
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-50 text-blue-600">${approvedIzin.tipe}</span>`;
                     detailsText = `
                         <div class="mt-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                             <strong>Alasan:</strong> "${approvedIzin.alasan}"
@@ -1439,7 +1290,7 @@
                     `;
                 } else {
                     statAlpa++;
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-600 border border-rose-100">Alpa</span>`;
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-50 text-rose-600">Alpa</span>`;
                     detailsText = `
                         <p class="text-xs text-rose-400/90 mt-1 font-medium">Tidak ada riwayat presensi masuk & pulang.</p>
                     `;
@@ -1614,13 +1465,14 @@
             const today = getTodayDateString();
             const searchKeyword = document.getElementById('admin-search-guru').value.toLowerCase();
 
-            const activeGurus = teachers.filter(t => t.role === 'guru' && (t.nama.toLowerCase().includes(searchKeyword) || t.nip.toString().includes(searchKeyword)));
+            const activeGurus = teachers.filter(t => t.role === 'guru' || !isNipMatch(t.nip, "197508212003051001"));
             
             let countSudah = 0;
             let countBelum = 0;
 
             activeGurus.forEach(guru => {
-                const record = attendanceDb.find(a => isNipMatch(a.nip, guru.nip) && a.tanggal === today);
+                const gNip = cleanNip(guru.nip);
+                const record = attendanceDb.find(a => isNipMatch(a.nip, gNip) && a.tanggal === today);
                 
                 let detailsHtml = '';
                 if (record) {
@@ -1649,7 +1501,7 @@
                             <img src="${guru.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="${guru.nama}" class="w-10 h-10 rounded-full object-cover border border-slate-100">
                             <div class="flex-1 min-w-0">
                                 <h5 class="text-sm font-bold text-slate-800 truncate">${guru.nama}</h5>
-                                <p class="text-[10px] text-slate-400 font-mono">NIP. ${guru.nip}</p>
+                                <p class="text-[10px] text-slate-400 font-mono">NIP. ${gNip}</p>
                             </div>
                             <span class="px-2 py-0.5 text-[10px] font-bold rounded ${record ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}">
                                 ${record ? 'Sudah Presensi' : 'Belum'}
@@ -2002,6 +1854,12 @@
             `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
+
+        // --- 15. INITIALIZATION ON LOAD ---
+        window.addEventListener('DOMContentLoaded', () => {
+            startLiveClock();
+            fetchDataFromSpreadsheet();
+        });
     </script>
 </body>
 </html>
