@@ -43,14 +43,14 @@
 
         <!-- ================= PAGE: LOGIN ================= -->
         <div id="page-login" class="flex-1 flex flex-col justify-between p-6">
-            <div class="flex-1 flex flex-col justify-center items-center my-auto">
+            <div class="flex-1 flex flex-col justify-center items-center my-auto w-full">
                 <!-- Logo -->
                 <div class="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 mb-6 relative overflow-hidden">
                     <i data-lucide="school" class="w-12 h-12 text-white"></i>
                     <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-white/10 rounded-full"></div>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Presensi Guru Mandiri</h1>
-                <p class="text-sm text-slate-500 mt-1 mb-8">Silakan masuk ke akun Anda</p>
+                <p class="text-sm text-slate-500 mt-1 mb-6">Silakan masuk ke akun Anda</p>
                 
                 <!-- Role Selector Tab -->
                 <div class="flex w-full bg-slate-100 p-1.5 rounded-xl mb-6">
@@ -89,8 +89,26 @@
                     <button onclick="handleLogin()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
                         Masuk Sistem <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
+                    
+                    <!-- PANEL KONFIGURASI API SPREADSHEET -->
+                    <div class="pt-2 border-t border-slate-100 flex flex-col items-center">
+                        <button onclick="toggleApiSettings()" class="text-xs text-slate-400 hover:text-blue-600 font-semibold flex items-center gap-1 transition-all">
+                            <i data-lucide="settings" class="w-3.5 h-3.5"></i> Atur Link Database Google Sheets
+                        </button>
+                        <div id="api-settings-panel" class="hidden w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-3 space-y-3">
+                            <div>
+                                <label class="block text-[9px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">URL Deployment Web App (Google Apps Script)</label>
+                                <input type="text" id="backend-api-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="saveApiUrl()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm">Simpan & Sinkronkan</button>
+                                <button onclick="clearApiUrl()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-bold rounded-xl transition-all">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="text-center pt-2">
-                        <p class="text-[11px] text-slate-400">Gunakan Akun Demo:</p>
+                        <p class="text-[11px] text-slate-400">Gunakan Akun Demo Offline:</p>
                         <p class="text-[11px] text-slate-500 font-mono">Guru: NIP <span class="font-bold">19850101</span> / Pass <span class="font-bold">19850101</span></p>
                         <p class="text-[11px] text-slate-500 font-mono">Admin: NIP <span class="font-bold">admin</span> / Pass <span class="font-bold">admin</span></p>
                     </div>
@@ -618,10 +636,10 @@
         let mapMarker = null;
         let streamInstance = null;
         let selectedCoordinates = null;
-        let selectedAddress = "Kantor Dinas Pendidikan";
+        let selectedAddress = "Kantor SMAN 1";
         let simulationTimeOverride = "real"; // "real" atau string waktu "HH:MM"
 
-        // Inisialisasi Database Guru Terperinci sesuai Kebutuhan Terbaru
+        // Inisialisasi Database Guru Terperinci sesuai Kebutuhan Terbaru (Lokal Fallback)
         const defaultTeachers = [
             { 
                 nip: "19850101", 
@@ -668,14 +686,26 @@
         const getAttendance = () => JSON.parse(localStorage.getItem('attendance_db'));
         const getIzin = () => JSON.parse(localStorage.getItem('izin_db'));
 
-        // Save Helper
-        const saveAttendance = (data) => localStorage.setItem('attendance_db', JSON.stringify(data));
-        const saveIzin = (data) => localStorage.setItem('izin_db', JSON.stringify(data));
+        // Save Helper (Lokal + Sinkronisasi API)
+        const saveAttendance = (data) => {
+            localStorage.setItem('attendance_db', JSON.stringify(data));
+        };
+        const saveIzin = (data) => {
+            localStorage.setItem('izin_db', JSON.stringify(data));
+        };
 
         // === WINDOW ONLOAD INITIALIZATION ===
-        window.onload = function() {
+        window.onload = async function() {
             lucide.createIcons();
             
+            // Muat API URL yang tersimpan dari LocalStorage jika ada
+            const storedApiUrl = localStorage.getItem('backend_api_url');
+            if (storedApiUrl) {
+                document.getElementById('backend-api-url').value = storedApiUrl;
+                // Lakukan sinkronisasi data awal di latar belakang secara asinkron
+                syncWithBackend();
+            }
+
             // Periksa sesi aktif
             const activeSession = localStorage.getItem('active_session_user');
             if (activeSession) {
@@ -698,6 +728,106 @@
             // Inisialisasi map default di tab Izin
             toggleIzinFormFields();
         };
+
+        // === API INTEGRASI GOOGLE APPS SCRIPT ===
+        
+        // Membuka/menutup panel setelan API backend di halaman Login
+        function toggleApiSettings() {
+            const panel = document.getElementById('api-settings-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        // Menyimpan API URL Google Apps Script dan mengambil data terbaru
+        async function saveApiUrl() {
+            const urlInput = document.getElementById('backend-api-url').value.trim();
+            if (!urlInput) {
+                showToast("Tautan API tidak boleh kosong!");
+                return;
+            }
+
+            const loading = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            loadingText.innerText = "Menghubungkan ke Google Sheets...";
+            loading.classList.remove('hidden');
+
+            try {
+                localStorage.setItem('backend_api_url', urlInput);
+                const success = await syncWithBackend();
+                loading.classList.add('hidden');
+                
+                if (success) {
+                    showToast("Database Google Sheets berhasil disinkronkan!");
+                    // Memperbarui dashboard jika sudah dalam keadaan masuk
+                    if (activeUser) {
+                        if (activeUser.role === 'admin') renderAdminDashboard();
+                        else renderGuruDashboard();
+                    }
+                } else {
+                    showToast("Koneksi gagal. Periksa kembali Web App URL Anda.");
+                }
+            } catch (err) {
+                loading.classList.add('hidden');
+                showToast("Gagal terhubung ke API backend.");
+            }
+        }
+
+        // Menghapus konfigurasi API backend dan kembali ke database lokal
+        function clearApiUrl() {
+            localStorage.removeItem('backend_api_url');
+            document.getElementById('backend-api-url').value = "";
+            showToast("Konfigurasi API dihapus. Menggunakan mode luring.");
+            // Reset ke database bawaan
+            localStorage.setItem('teachers_db', JSON.stringify(defaultTeachers));
+        }
+
+        // Sinkronisasi data dari Google Sheets (GET)
+        async function syncWithBackend() {
+            const apiUrl = localStorage.getItem('backend_api_url');
+            if (!apiUrl) return false;
+
+            try {
+                const response = await fetch(`${apiUrl}?action=getAllData`);
+                const result = await response.json();
+                
+                if (result && !result.error) {
+                    // Simpan data terbaru dari Spreadsheet ke LocalStorage untuk akses instan
+                    if (result.teachers && result.teachers.length > 0) {
+                        localStorage.setItem('teachers_db', JSON.stringify(result.teachers));
+                    }
+                    if (result.attendance) {
+                        localStorage.setItem('attendance_db', JSON.stringify(result.attendance));
+                    }
+                    if (result.izin) {
+                        localStorage.setItem('izin_db', JSON.stringify(result.izin));
+                    }
+                    return true;
+                }
+            } catch (err) {
+                console.warn("Koneksi backend gagal. Menjalankan fallback data lokal.", err);
+            }
+            return false;
+        }
+
+        // Pengiriman Aksi tulis/ubah data ke Google Sheets (POST)
+        async function sendPostAction(action, payload) {
+            const apiUrl = localStorage.getItem('backend_api_url');
+            if (!apiUrl) return { success: true, offline: true };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain"
+                    },
+                    body: JSON.stringify({ action: action, ...payload })
+                });
+                const responseText = await response.text();
+                return JSON.parse(responseText);
+            } catch (err) {
+                console.error("Gagal menyinkronkan perubahan ke Google Sheets: ", err);
+                return { success: false, error: err.toString() };
+            }
+        }
 
         // === NOTIFIKASI SEMENTARA (TOAST) ===
         function showToast(message) {
@@ -863,7 +993,6 @@
                 btnLonceng.disabled = false;
                 pulse.classList.remove('hidden');
                 
-                let themeColor = state === "masuk" ? "bell" : "bell-ring";
                 loncengInner.innerHTML = `
                     <i data-lucide="bell" class="w-12 h-12 text-white animate-bounce"></i>
                     <span class="text-[10px] font-black text-white tracking-widest uppercase mt-1">${state === 'masuk' ? 'MASUK' : 'PULANG'}</span>
@@ -881,7 +1010,6 @@
 
         // === TRIGGER KLIK LONCENG PRESENSI ===
         function handleLoncengClick() {
-            // Evaluasi ulang sebelum membuka modal
             evaluateLoncengState();
             openCameraModal(currentPresensiType);
         }
@@ -930,31 +1058,50 @@
             });
         }
 
-        // === LOGIN SUBMIT ===
-        function handleLogin() {
+        // === LOGIN SUBMIT (DENGAN SINKRONISASI API SPREADSHEET) ===
+        async function handleLogin() {
             const nip = document.getElementById('login-nip').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
             const loading = document.getElementById('loading-overlay');
             const loadingText = document.getElementById('loading-text');
 
             if (!nip || !pass) {
-                showToast("NIP dan Password wajib diisi!");
+                showToast("ID Pengguna dan Password wajib diisi!");
                 return;
             }
 
-            loadingText.innerText = "Memvalidasi kredensial...";
+            loadingText.innerText = "Menghubungkan ke database...";
             loading.classList.remove('hidden');
+
+            // Coba sinkronisasi data terbaru dari spreadsheet sebelum memvalidasi login
+            await syncWithBackend();
 
             setTimeout(() => {
                 loading.classList.add('hidden');
                 
+                const teachers = getTeachers();
+
                 if (currentRole === 'guru') {
-                    const teachers = getTeachers();
-                    const teacher = teachers.find(t => t.nip === nip && nip === pass); // Password as NIP demo
+                    // Cari guru berdasarkan NIP, dan password sama dengan NIP
+                    const teacher = teachers.find(t => String(t.NIP) === nip && t.Role === 'guru');
                     
-                    if (teacher) {
-                        activeUser = teacher;
-                        localStorage.setItem('active_session_user', JSON.stringify(teacher));
+                    if (teacher && nip === pass) {
+                        // Memetakan header spreadsheet ke format object JS
+                        activeUser = {
+                            nip: teacher.NIP,
+                            name: teacher.Name,
+                            role: teacher.Role,
+                            avatar: teacher.Avatar,
+                            satuanKerja: teacher.SatuanKerja,
+                            unitKerja: teacher.UnitKerja,
+                            jabatan: teacher.Jabatan,
+                            pangkat: teacher.Pangkat,
+                            atasanNama: teacher.AtasanNama,
+                            atasanJabatan: teacher.AtasanJabatan,
+                            alamat: teacher.Alamat,
+                            skema: teacher.Skema
+                        };
+                        localStorage.setItem('active_session_user', JSON.stringify(activeUser));
                         showPage('page-guru');
                         renderGuruDashboard();
                         showToast("Berhasil login sebagai Guru!");
@@ -962,19 +1109,32 @@
                         showToast("NIP atau password salah! (Sama dengan NIP)");
                     }
                 } else {
-                    // Admin credentials demo
-                    if (nip === 'admin' && pass === 'admin') {
+                    // Memeriksa apakah ada user di Spreadsheet dengan role 'admin'
+                    const adminFromSheet = teachers.find(t => String(t.NIP) === nip && t.Role === 'admin');
+                    
+                    if (adminFromSheet && nip === pass) {
+                        activeUser = {
+                            nip: adminFromSheet.NIP,
+                            name: adminFromSheet.Name,
+                            role: 'admin'
+                        };
+                        localStorage.setItem('active_session_user', JSON.stringify(activeUser));
+                        showPage('page-admin');
+                        renderAdminDashboard();
+                        showToast(`Selamat datang, Admin ${activeUser.name}!`);
+                    } else if (nip === 'admin' && pass === 'admin') {
+                        // Fallback akun super-admin bawaan jika belum diinput di Spreadsheet
                         const adminUser = { nip: 'admin', name: 'Admin Kepegawaian', role: 'admin' };
                         activeUser = adminUser;
                         localStorage.setItem('active_session_user', JSON.stringify(adminUser));
                         showPage('page-admin');
                         renderAdminDashboard();
-                        showToast("Berhasil masuk Dashboard Admin!");
+                        showToast("Berhasil masuk Dashboard Admin (Akun Bawaan)!");
                     } else {
                         showToast("ID Admin atau Password salah!");
                     }
                 }
-            }, 1000);
+            }, 800);
         }
 
         // === LOGOUT SYSTEM ===
@@ -1003,9 +1163,9 @@
             // Header profile data
             document.getElementById('guru-header-name').innerText = activeUser.name;
             document.getElementById('guru-header-nip').innerText = "NIP. " + activeUser.nip;
-            document.getElementById('guru-header-avatar').src = activeUser.avatar;
+            document.getElementById('guru-header-avatar').src = activeUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
 
-            // Profil Tab Profile Data (Nilai-Nilai Baru Sesuai Permintaan)
+            // Profil Tab Profile Data
             document.getElementById('profil-name').innerText = activeUser.name;
             document.getElementById('profil-nip').innerText = "NIP. " + activeUser.nip;
             document.getElementById('profil-satuan-kerja').innerText = activeUser.satuanKerja || "Dinas Pendidikan";
@@ -1018,7 +1178,7 @@
             
             document.getElementById('profil-alamat').innerText = activeUser.alamat || "Jl. Raya Parung No. 12, Bogor, Jawa Barat";
             document.getElementById('profil-skema').innerText = activeUser.skema || "5 Hari Kerja (06.30)";
-            document.getElementById('profil-photo-preview').src = activeUser.avatar;
+            document.getElementById('profil-photo-preview').src = activeUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150";
 
             // Cek status kehadiran hari ini
             updateGuruTodayStatus();
@@ -1030,19 +1190,19 @@
         function updateGuruTodayStatus() {
             const attendance = getAttendance();
             const todayKey = getTodayKey();
-            const myLog = attendance.find(log => log.nip === activeUser.nip && log.date === todayKey);
+            const myLog = attendance.find(log => String(log.NIP) === String(activeUser.nip) && log.Date === todayKey);
             const statusLabel = document.getElementById('guru-today-status');
 
             if (myLog) {
-                if (myLog.status === 'Dinas') {
+                if (myLog.Status === 'Dinas') {
                     statusLabel.className = "text-lg font-bold text-amber-500";
                     statusLabel.innerText = "Dinas Luar";
-                } else if (myLog.timeOut) {
+                } else if (myLog.TimeOut) {
                     statusLabel.className = "text-lg font-bold text-emerald-400";
-                    statusLabel.innerText = `Sudah Pulang (${myLog.timeOut})`;
+                    statusLabel.innerText = `Sudah Pulang (${myLog.TimeOut})`;
                 } else {
                     statusLabel.className = "text-lg font-bold text-indigo-400";
-                    statusLabel.innerText = `Hadir Datang (${myLog.timeIn})`;
+                    statusLabel.innerText = `Hadir Datang (${myLog.TimeIn})`;
                 }
             } else {
                 statusLabel.className = "text-lg font-bold text-rose-300";
@@ -1091,33 +1251,33 @@
 
         // === LIVE REKAN GURU ===
         function renderLivePresensiRekan() {
-            const teachers = getTeachers().filter(t => t.nip !== activeUser.nip);
+            const teachers = getTeachers().filter(t => String(t.NIP) !== String(activeUser.nip) && t.Role === 'guru');
             const attendance = getAttendance();
             const todayKey = getTodayKey();
             const listContainer = document.getElementById('live-presensi-list');
             listContainer.innerHTML = "";
 
             teachers.forEach(teacher => {
-                const log = attendance.find(a => a.nip === teacher.nip && a.date === todayKey);
+                const log = attendance.find(a => String(a.NIP) === String(teacher.NIP) && a.Date === todayKey);
                 let statusText = `<span class="text-xs text-rose-500 font-bold bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">Belum Presensi</span>`;
                 
                 if (log) {
-                    if (log.status === 'Dinas') {
+                    if (log.Status === 'Dinas') {
                         statusText = `<span class="text-xs text-amber-600 font-bold bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Dinas Luar</span>`;
-                    } else if (log.timeOut) {
-                        statusText = `<span class="text-xs text-blue-600 font-bold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Pulang: ${log.timeOut}</span>`;
+                    } else if (log.TimeOut) {
+                        statusText = `<span class="text-xs text-blue-600 font-bold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Pulang: ${log.TimeOut}</span>`;
                     } else {
-                        statusText = `<span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Datang: ${log.timeIn}</span>`;
+                        statusText = `<span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Datang: ${log.TimeIn}</span>`;
                     }
                 }
 
                 const itemHtml = `
                     <div class="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm hover:scale-[1.01] transition-transform">
                         <div class="flex items-center gap-3">
-                            <img src="${teacher.avatar}" alt="Ava" class="w-10 h-10 rounded-full object-cover">
+                            <img src="${teacher.Avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Ava" class="w-10 h-10 rounded-full object-cover">
                             <div>
-                                <h5 class="font-bold text-slate-800 text-xs">${teacher.name}</h5>
-                                <p class="text-[9px] text-slate-400 font-semibold">${teacher.jabatan || 'Guru'}</p>
+                                <h5 class="font-bold text-slate-800 text-xs">${teacher.Name}</h5>
+                                <p class="text-[9px] text-slate-400 font-semibold">${teacher.Jabatan || 'Guru'}</p>
                             </div>
                         </div>
                         <div>${statusText}</div>
@@ -1177,7 +1337,7 @@
                 mapInstance = null;
             }
 
-            // Defaults (Parung, West Java)
+            // Defaults (SMAN 1 Parung, West Java)
             const lat = -6.425218;
             const lng = 106.726521;
             selectedCoordinates = { lat, lng };
@@ -1257,8 +1417,8 @@
                 });
         }
 
-        // === SUBMIT PENGAJUAN IZIN ===
-        function submitIzin() {
+        // === SUBMIT PENGAJUAN IZIN (SINKRONISASI REAL-TIME) ===
+        async function submitIzin() {
             const tipe = document.getElementById('izin-tipe').value;
             const tglTunggal = document.getElementById('izin-tanggal').value;
             const tglMulai = document.getElementById('izin-tgl-mulai').value;
@@ -1272,7 +1432,6 @@
                 return;
             }
 
-            // Validasi format tanggal
             let tglPengajuan = "";
             if (tipe === 'Dinas Luar Full') {
                 if (!tglMulai || !tglSelesai) {
@@ -1289,37 +1448,44 @@
             }
 
             const loading = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            loadingText.innerText = "Mengirim permohonan ke server...";
             loading.classList.remove('hidden');
 
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                
-                const currentIzinDb = getIzin();
-                const newIzin = {
-                    id: "IZN-" + Date.now(),
-                    nip: activeUser.nip,
-                    teacherName: activeUser.name,
-                    teacherAvatar: activeUser.avatar,
-                    tipe,
-                    tanggal: tglPengajuan,
-                    jamDatang: jamDatang || "-",
-                    jamPulang: jamPulang || "-",
-                    lokasi: tipe.includes('Dinas') ? selectedAddress : "-",
-                    alasan,
-                    status: "Menunggu", // Menunggu, Disetujui, Ditolak
-                    tglPengajuan: getTodayKey()
-                };
+            const newIzin = {
+                id: "IZN-" + Date.now(),
+                nip: activeUser.nip,
+                teacherName: activeUser.name,
+                teacherAvatar: activeUser.avatar,
+                tipe,
+                tanggal: tglPengajuan,
+                jamDatang: jamDatang || "-",
+                jamPulang: jamPulang || "-",
+                lokasi: tipe.includes('Dinas') ? selectedAddress : "-",
+                alasan,
+                status: "Menunggu",
+                tglPengajuan: getTodayKey()
+            };
 
-                currentIzinDb.unshift(newIzin);
-                saveIzin(currentIzinDb);
+            // 1. Simpan di Local Storage (Akses cepat offline)
+            const currentIzinDb = getIzin();
+            currentIzinDb.unshift(newIzin);
+            saveIzin(currentIzinDb);
 
-                // Reset Inputs
-                document.getElementById('izin-alasan').value = "";
-                document.getElementById('map-search-input').value = "";
+            // 2. Unggah ke Google Spreadsheet
+            const response = await sendPostAction('submitIzin', { data: newIzin });
+            loading.classList.add('hidden');
 
-                showToast("Pengajuan berhasil dikirim!");
-                renderGuruRiwayatIzin();
-            }, 1000);
+            // Reset Inputs
+            document.getElementById('izin-alasan').value = "";
+            document.getElementById('map-search-input').value = "";
+
+            if (response.success) {
+                showToast("Pengajuan berhasil dikirim & disimpan di Google Sheets!");
+            } else {
+                showToast("Tersimpan secara lokal (Luring).");
+            }
+            renderGuruRiwayatIzin();
         }
 
         // === RIWAYAT IZIN GURU VIEW ===
@@ -1346,9 +1512,8 @@
 
             const bulan = parseInt(document.getElementById('riwayat-izin-bulan').value);
             const tahun = parseInt(document.getElementById('riwayat-izin-tahun').value);
-            const allIzin = getIzin().filter(iz => iz.nip === activeUser.nip);
+            const allIzin = getIzin().filter(iz => String(iz.nip) === String(activeUser.nip));
 
-            // Filter by month & year
             const filteredIzin = allIzin.filter(iz => {
                 if (iz.status !== activeGuruIzinTab) return false;
                 const d = new Date(iz.tglPengajuan);
@@ -1395,26 +1560,24 @@
             const bulan = parseInt(document.getElementById('rekap-filter-bulan').value);
             const tahun = parseInt(document.getElementById('rekap-filter-tahun').value);
             
-            const attendance = getAttendance().filter(a => a.nip === activeUser.nip);
+            const attendance = getAttendance().filter(a => String(a.NIP) === String(activeUser.nip));
             const listContainer = document.getElementById('guru-rekap-list');
             if (!listContainer) return;
             listContainer.innerHTML = "";
 
-            // Filter logs by month & year
             const filteredLogs = attendance.filter(log => {
-                const logDate = new Date(log.date);
+                const logDate = new Date(log.Date);
                 return logDate.getMonth() === bulan && logDate.getFullYear() === tahun;
             });
 
-            // Calculate statistics
             let countHadir = 0;
             let countIzin = 0;
             let countAlpa = 0;
 
             filteredLogs.forEach(log => {
-                if (log.status === 'Hadir' || log.status === 'Terlambat') countHadir++;
-                else if (log.status === 'Dinas') countIzin++;
-                else if (log.status === 'Alpa') countAlpa++;
+                if (log.Status === 'Hadir' || log.Status === 'Terlambat') countHadir++;
+                else if (log.Status === 'Dinas' || log.Status === 'Izin') countIzin++;
+                else if (log.Status === 'Alpa') countAlpa++;
             });
 
             document.getElementById('rekap-stat-guru-hadir').innerText = `${countHadir} Hari`;
@@ -1424,28 +1587,30 @@
             if (filteredLogs.length === 0) {
                 listContainer.innerHTML = `
                     <div class="text-center py-8">
-                        <p class="text-xs text-slate-400 font-semibold">Tidak ada data data presensi bulan ini</p>
+                        <p class="text-xs text-slate-400 font-semibold">Tidak ada data presensi bulan ini</p>
                     </div>
                 `;
                 return;
             }
 
-            // Sort newest first
-            filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            filteredLogs.sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
             filteredLogs.forEach(log => {
-                const dateObj = new Date(log.date);
+                const dateObj = new Date(log.Date);
                 const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
                 const formatedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
-                let statusBadge = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">Hadir</span>`;
-                if (log.status === 'Dinas') statusBadge = `<span class="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">Dinas Luar</span>`;
-                if (log.status === 'Alpa') statusBadge = `<span class="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">Alpa</span>`;
+                let statusBadge = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">${log.Status}</span>`;
+                if (log.Status === 'Dinas' || log.Status === 'Izin') {
+                    statusBadge = `<span class="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">${log.Status}</span>`;
+                } else if (log.Status === 'Alpa') {
+                    statusBadge = `<span class="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">Alpa</span>`;
+                }
 
-                const selfieImg = log.selfieIn ? `
+                const selfieImg = log.SelfieIn ? `
                     <div class="mt-2.5 flex items-center gap-2">
-                        <img src="${log.selfieIn}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" alt="Selfie Datang">
-                        ${log.selfieOut ? `<img src="${log.selfieOut}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" alt="Selfie Pulang">` : ''}
+                        <img src="${log.SelfieIn}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" alt="Selfie Datang">
+                        ${log.SelfieOut ? `<img src="${log.SelfieOut}" class="w-10 h-10 rounded-lg object-cover border border-slate-200" alt="Selfie Pulang">` : ''}
                     </div>
                 ` : '';
 
@@ -1459,8 +1624,8 @@
                             ${statusBadge}
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-[11px] font-medium pt-1.5 border-t border-slate-50 text-slate-500">
-                            <div>Jam Datang: <span class="text-slate-800 font-semibold">${log.timeIn || '-'}</span></div>
-                            <div>Jam Pulang: <span class="text-slate-800 font-semibold">${log.timeOut || '-'}</span></div>
+                            <div>Jam Datang: <span class="text-slate-800 font-semibold">${log.TimeIn || '-'}</span></div>
+                            <div>Jam Pulang: <span class="text-slate-800 font-semibold">${log.TimeOut || '-'}</span></div>
                         </div>
                         ${selfieImg}
                     </div>
@@ -1469,17 +1634,18 @@
             });
         }
 
-        // === PROFILE PHOTO UPLOAD ===
+        // === PROFILE PHOTO UPLOAD (DENGAN SINKRONISASI API) ===
         function uploadProfilePhoto(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
+                // 1. Simpan Lokal
                 const teachers = getTeachers();
                 const updatedTeachers = teachers.map(t => {
-                    if (t.nip === activeUser.nip) {
-                        t.avatar = e.target.result;
+                    if (String(t.NIP) === String(activeUser.nip)) {
+                        t.Avatar = e.target.result;
                     }
                     return t;
                 });
@@ -1490,6 +1656,10 @@
 
                 document.getElementById('profil-photo-preview').src = e.target.result;
                 document.getElementById('guru-header-avatar').src = e.target.result;
+
+                // 2. Sinkronkan dengan Sheet database guru
+                showToast("Mengunggah foto baru ke database...");
+                await sendPostAction('uploadProfilePhoto', { nip: activeUser.nip, avatar: e.target.result });
                 showToast("Foto profil berhasil diperbarui!");
             };
             reader.readAsDataURL(file);
@@ -1501,20 +1671,18 @@
             const title = document.getElementById('camera-modal-title');
             title.innerText = type === 'datang' ? "Presensi Jam Datang" : "Presensi Jam Pulang";
 
-            // Cek kesiapan kamera
             const modal = document.getElementById('camera-modal');
             modal.classList.remove('hidden');
 
             const video = document.getElementById('webcam');
             
-            // Inisialisasi Akses Webcam
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
                 .then(stream => {
                     streamInstance = stream;
                     video.srcObject = stream;
                 })
                 .catch(err => {
-                    console.log("Kamera tidak diizinkan atau tidak didukung, menggunakan simulasi.");
+                    console.log("Kamera dibatasi atau tidak didukung, berjalan di mode simulasi.");
                     video.srcObject = null;
                 });
         }
@@ -1523,24 +1691,24 @@
             const modal = document.getElementById('camera-modal');
             modal.classList.add('hidden');
 
-            // Turn off camera stream
             if (streamInstance) {
                 streamInstance.getTracks().forEach(track => track.stop());
                 streamInstance = null;
             }
         }
 
+        // === TAKE PICTURE & PRESENSI (DENGAN REAL-TIME UPLOAD) ===
         function takePictureAndPresensi() {
             const video = document.getElementById('webcam');
             const canvas = document.getElementById('photo-canvas');
             const ctx = canvas.getContext('2d');
-            let selfieData = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300"; // Mock default
+            let selfieData = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300"; // Default avatar fallback
 
             if (streamInstance && video) {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 ctx.translate(canvas.width, 0);
-                ctx.scale(-1, 1); // Flip horizontal
+                ctx.scale(-1, 1);
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 selfieData = canvas.toDataURL('image/jpeg');
             }
@@ -1548,99 +1716,80 @@
             closeCameraModal();
 
             const loading = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            loadingText.innerText = "Mengunggah data presensi...";
             loading.classList.remove('hidden');
 
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                
+            setTimeout(async () => {
                 const attendance = getAttendance();
                 const todayKey = getTodayKey();
                 const timeObj = getCurrentTimeObject();
 
-                let myLog = attendance.find(log => log.nip === activeUser.nip && log.date === todayKey);
+                let myLog = attendance.find(log => String(log.NIP) === String(activeUser.nip) && log.Date === todayKey);
+                let uploadPayload = null;
 
                 if (currentPresensiType === 'datang') {
                     if (myLog) {
+                        loading.classList.add('hidden');
                         showToast("Anda sudah absen Datang hari ini!");
                         return;
                     }
 
                     const newLog = {
+                        Date: todayKey,
+                        NIP: activeUser.nip,
+                        Name: activeUser.name,
+                        TimeIn: timeObj.formatted,
+                        TimeOut: "",
+                        Status: "Hadir",
+                        SelfieIn: selfieData,
+                        SelfieOut: ""
+                    };
+                    attendance.push(newLog);
+                    uploadPayload = newLog;
+                } else {
+                    if (!myLog) {
+                        loading.classList.add('hidden');
+                        showToast("Lakukan absen masuk pagi terlebih dahulu!");
+                        return;
+                    }
+                    if (myLog.TimeOut) {
+                        loading.classList.add('hidden');
+                        showToast("Anda sudah absen pulang hari ini!");
+                        return;
+                    }
+
+                    myLog.TimeOut = timeObj.formatted;
+                    myLog.SelfieOut = selfieData;
+                    uploadPayload = myLog;
+                }
+
+                // Simpan lokal instan
+                localStorage.setItem('attendance_db', JSON.stringify(attendance));
+
+                // Kirim POST ke Spreadsheet
+                const response = await sendPostAction('saveAttendance', { 
+                    data: {
                         date: todayKey,
                         nip: activeUser.nip,
                         name: activeUser.name,
-                        timeIn: timeObj.formatted,
-                        timeOut: null,
-                        status: "Hadir",
-                        selfieIn: selfieData,
-                        selfieOut: null
-                    };
-                    attendance.push(newLog);
-                    showToast(`Presensi Datang berhasil disimpan: ${timeObj.formatted}`);
-                } else {
-                    // Pulang
-                    if (!myLog) {
-                        showToast("Silakan melakukan absen Datang terlebih dahulu!");
-                        return;
+                        timeIn: uploadPayload.TimeIn || uploadPayload.timeIn || "",
+                        timeOut: uploadPayload.TimeOut || uploadPayload.timeOut || "",
+                        status: uploadPayload.Status || uploadPayload.status || "Hadir",
+                        selfieIn: uploadPayload.SelfieIn || uploadPayload.selfieIn || "",
+                        selfieOut: uploadPayload.SelfieOut || uploadPayload.selfieOut || ""
                     }
-                    if (myLog.timeOut) {
-                        showToast("Anda sudah melakukan absen Pulang hari ini!");
-                        return;
-                    }
+                });
 
-                    myLog.timeOut = timeObj.formatted;
-                    myLog.selfieOut = selfieData;
-                    showToast(`Presensi Pulang berhasil disimpan: ${timeObj.formatted || timeStr || timeObj || timeStr || timeObj || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeStr || timeObj.formatted}`);
-                }
-
-                saveAttendance(attendance);
-                renderGuruDashboard();
-            }, 1000);
-        }
-
-        // Helper tambahan untuk mendukung logika Simulator
-        function handleLogin() {
-            const nip = document.getElementById('login-nip').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
-            const loading = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-
-            if (!nip || !pass) {
-                showToast("NIP dan Password wajib diisi!");
-                return;
-            }
-
-            loadingText.innerText = "Memvalidasi kredensial...";
-            loading.classList.remove('hidden');
-
-            setTimeout(() => {
                 loading.classList.add('hidden');
-                
-                if (currentRole === 'guru') {
-                    const teachers = getTeachers();
-                    const teacher = teachers.find(t => t.nip === nip && nip === pass);
-                    
-                    if (teacher) {
-                        activeUser = teacher;
-                        localStorage.setItem('active_session_user', JSON.stringify(teacher));
-                        showPage('page-guru');
-                        renderGuruDashboard();
-                        showToast("Berhasil login sebagai Guru!");
-                    } else {
-                        showToast("NIP atau password salah! (Sama dengan NIP)");
-                    }
+
+                if (response.success) {
+                    showToast(`Presensi berhasil terunggah ke Spreadsheet: ${timeObj.formatted}`);
                 } else {
-                    if (nip === 'admin' && pass === 'admin') {
-                        const adminUser = { nip: 'admin', name: 'Admin Kepegawaian', role: 'admin' };
-                        activeUser = adminUser;
-                        localStorage.setItem('active_session_user', JSON.stringify(adminUser));
-                        showPage('page-admin');
-                        renderAdminDashboard();
-                        showToast("Berhasil masuk Dashboard Admin!");
-                    } else {
-                        showToast("ID Admin atau Password salah!");
-                    }
+                    showToast(`Presensi direkam secara lokal: ${timeObj.formatted}`);
                 }
+                
+                renderGuruDashboard();
             }, 1000);
         }
 
@@ -1678,7 +1827,7 @@
         }
 
         function updateAdminIzinBadge() {
-            const pendingIzin = getIzin().filter(i => i.status === 'Menunggu');
+            const pendingIzin = getIzin().filter(i => i.status === 'Menunggu' || i.Status === 'Menunggu');
             const badge = document.getElementById('badge-admin-izin');
             if (badge) {
                 if (pendingIzin.length > 0) {
@@ -1705,28 +1854,32 @@
             let countBelum = 0;
 
             teachers.forEach(teacher => {
-                const hasNameMatch = teacher.name.toLowerCase().includes(searchQuery);
-                const hasNipMatch = teacher.nip.includes(searchQuery);
-                if (!hasNameMatch && !hasNipMatch) return; // Search Filter
+                // Filter pencarian
+                const hasNameMatch = teacher.Name && teacher.Name.toLowerCase().includes(searchQuery);
+                const hasNipMatch = teacher.NIP && String(teacher.NIP).includes(searchQuery);
+                if (!hasNameMatch && !hasNipMatch) return; 
 
-                const log = attendance.find(a => a.nip === teacher.nip && a.date === todayKey);
+                // Lewati tampilan diri sendiri jika admin juga terdaftar di database guru
+                if (teacher.Role === 'admin') return;
+
+                const log = attendance.find(a => String(a.NIP) === String(teacher.NIP) && a.Date === todayKey);
                 
                 let statsHtml = "";
                 if (log) {
                     countAbsen++;
-                    if (log.status === 'Dinas') {
+                    if (log.Status === 'Dinas') {
                         statsHtml = `
                             <div class="space-y-1">
                                 <span class="text-[9px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md font-bold uppercase border border-amber-100 flex items-center gap-0.5 w-max"><i data-lucide="map-pin" class="w-2.5 h-2.5"></i> Dinas Luar</span>
-                                <p class="text-[10px] text-slate-400 leading-tight">Dinas: ${log.timeIn || 'Full-Day'}</p>
+                                <p class="text-[10px] text-slate-400 leading-tight">Dinas: ${log.TimeIn || 'Full-Day'}</p>
                             </div>
                         `;
                     } else {
                         statsHtml = `
                             <div class="space-y-1">
                                 <span class="text-[9px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md font-bold uppercase border border-emerald-100 w-max block">Hadir</span>
-                                <p class="text-[10px] text-slate-500 font-medium">Datang: <span class="font-bold text-slate-700">${log.timeIn}</span></p>
-                                ${log.timeOut ? `<p class="text-[10px] text-slate-500 font-medium">Pulang: <span class="font-bold text-slate-700">${log.timeOut}</span></p>` : `<p class="text-[10px] text-slate-400">Belum absen pulang</p>`}
+                                <p class="text-[10px] text-slate-500 font-medium">Datang: <span class="font-bold text-slate-700">${log.TimeIn || log.timeIn}</span></p>
+                                ${log.TimeOut ? `<p class="text-[10px] text-slate-500 font-medium">Pulang: <span class="font-bold text-slate-700">${log.TimeOut}</span></p>` : `<p class="text-[10px] text-slate-400">Belum pulang</p>`}
                             </div>
                         `;
                     }
@@ -1740,11 +1893,11 @@
                 const cardHtml = `
                     <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex justify-between items-center gap-4">
                         <div class="flex items-center gap-3">
-                            <img src="${teacher.avatar}" alt="Avatar" class="w-11 h-11 rounded-full object-cover">
+                            <img src="${teacher.Avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Avatar" class="w-11 h-11 rounded-full object-cover">
                             <div>
-                                <h4 class="font-bold text-slate-800 text-xs">${teacher.name}</h4>
-                                <p class="text-[9px] font-semibold text-slate-400 font-mono">NIP. ${teacher.nip}</p>
-                                <p class="text-[9px] font-semibold text-blue-600 mt-0.5">${teacher.jabatan || 'Guru'}</p>
+                                <h4 class="font-bold text-slate-800 text-xs">${teacher.Name}</h4>
+                                <p class="text-[9px] font-semibold text-slate-400 font-mono">NIP. ${teacher.NIP}</p>
+                                <p class="text-[9px] font-semibold text-blue-600 mt-0.5">${teacher.Jabatan || 'Guru'}</p>
                             </div>
                         </div>
                         <div class="text-right flex-shrink-0">${statsHtml}</div>
@@ -1760,7 +1913,7 @@
 
         // === ADMIN APPROVAL LIST ===
         function renderAdminIzin() {
-            const izins = getIzin().filter(i => i.status === 'Menunggu');
+            const izins = getIzin().filter(i => i.status === 'Menunggu' || i.Status === 'Menunggu');
             const listContainer = document.getElementById('admin-izin-list');
             if (!listContainer) return;
             listContainer.innerHTML = "";
@@ -1777,35 +1930,35 @@
             }
 
             izins.forEach(iz => {
-                const detailLokasi = iz.lokasi !== "-" ? `
+                const detailLokasi = (iz.lokasi && iz.lokasi !== "-") ? `
                     <div class="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[10px] text-indigo-600 font-semibold flex items-start gap-1">
                         <i data-lucide="map-pin" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
-                        <span>${iz.lokasi}</span>
+                        <span>${iz.lokasi || iz.Lokasi}</span>
                     </div>
                 ` : '';
 
                 const cardHtml = `
                     <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm space-y-3">
                         <div class="flex items-center gap-3">
-                            <img src="${iz.teacherAvatar}" alt="Ava" class="w-10 h-10 rounded-full object-cover">
+                            <img src="${iz.teacherAvatar || iz.TeacherAvatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'}" alt="Ava" class="w-10 h-10 rounded-full object-cover">
                             <div>
-                                <h4 class="font-bold text-slate-800 text-xs">${iz.teacherName}</h4>
-                                <p class="text-[9px] font-semibold text-slate-400 font-mono">NIP. ${iz.nip}</p>
+                                <h4 class="font-bold text-slate-800 text-xs">${iz.teacherName || iz.TeacherName}</h4>
+                                <p class="text-[9px] font-semibold text-slate-400 font-mono">NIP. ${iz.nip || iz.NIP}</p>
                             </div>
                         </div>
                         <div class="border-t border-slate-100 pt-2.5 space-y-1">
-                            <span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full uppercase inline-block">${iz.tipe}</span>
-                            <p class="text-[11px] text-slate-500 font-medium">Tanggal: <span class="font-bold text-slate-700">${iz.tanggal}</span></p>
-                            ${iz.jamDatang !== "-" ? `<p class="text-[11px] text-slate-500 font-medium">Waktu: <span class="font-bold text-slate-700">${iz.jamDatang} s.d ${iz.jamPulang}</span></p>` : ''}
-                            <p class="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl italic leading-relaxed">"${iz.alasan}"</p>
+                            <span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full uppercase inline-block">${iz.tipe || iz.Tipe}</span>
+                            <p class="text-[11px] text-slate-500 font-medium">Tanggal: <span class="font-bold text-slate-700">${iz.tanggal || iz.Tanggal}</span></p>
+                            ${(iz.jamDatang && iz.jamDatang !== "-") ? `<p class="text-[11px] text-slate-500 font-medium">Waktu: <span class="font-bold text-slate-700">${iz.jamDatang} s.d ${iz.jamPulang}</span></p>` : ''}
+                            <p class="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl italic leading-relaxed">"${iz.alasan || iz.Alasan}"</p>
                             ${detailLokasi}
                         </div>
                         <!-- Action Buttons -->
                         <div class="flex gap-2.5 pt-1.5">
-                            <button onclick="processIzinStatus('${iz.id}', 'Ditolak')" class="flex-1 py-2 bg-rose-50 border border-rose-100 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all">
+                            <button onclick="processIzinStatus('${iz.id || iz.ID}', 'Ditolak')" class="flex-1 py-2 bg-rose-50 border border-rose-100 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all">
                                 Tolak Izin
                             </button>
-                            <button onclick="processIzinStatus('${iz.id}', 'Disetujui')" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-100">
+                            <button onclick="processIzinStatus('${iz.id || iz.ID}', 'Disetujui')" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-100">
                                 Setujui Izin
                             </button>
                         </div>
@@ -1816,33 +1969,37 @@
             lucide.createIcons();
         }
 
+        // Memproses Persetujuan Izin Admin (SINKRONISASI REAL-TIME SPREADSHEET)
         function processIzinStatus(izinId, status) {
             const loading = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            loadingText.innerText = "Memproses pembaruan status...";
             loading.classList.remove('hidden');
 
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                
+            setTimeout(async () => {
+                // 1. Ubah Lokal
                 const izins = getIzin();
                 const updatedIzins = izins.map(iz => {
-                    if (iz.id === izinId) {
+                    const checkId = iz.id || iz.ID;
+                    if (String(checkId) === String(izinId)) {
                         iz.status = status;
+                        iz.Status = status;
                         
                         if (status === 'Disetujui') {
                             const attendance = getAttendance();
                             const todayKey = getTodayKey();
                             
-                            let log = attendance.find(a => a.nip === iz.nip && a.date === todayKey);
+                            let log = attendance.find(a => String(a.NIP) === String(iz.nip || iz.NIP) && a.Date === todayKey);
                             if (!log) {
                                 log = {
-                                    date: todayKey,
-                                    nip: iz.nip,
-                                    name: iz.teacherName,
-                                    timeIn: iz.jamDatang !== "-" ? iz.jamDatang : "07:00:00",
-                                    timeOut: iz.jamPulang !== "-" ? iz.jamPulang : "14:00:00",
-                                    status: iz.tipe.includes('Dinas') ? "Dinas" : "Izin",
-                                    selfieIn: null,
-                                    selfieOut: null
+                                    Date: todayKey,
+                                    NIP: iz.nip || iz.NIP,
+                                    Name: iz.teacherName || iz.TeacherName,
+                                    TimeIn: iz.jamDatang !== "-" ? iz.jamDatang : "07:00:00",
+                                    TimeOut: iz.jamPulang !== "-" ? iz.jamPulang : "14:00:00",
+                                    Status: (iz.tipe || iz.Tipe || "").includes('Dinas') ? "Dinas" : "Izin",
+                                    SelfieIn: "",
+                                    SelfieOut: ""
                                 };
                                 attendance.push(log);
                                 saveAttendance(attendance);
@@ -1853,7 +2010,17 @@
                 });
 
                 saveIzin(updatedIzins);
-                showToast(`Pengajuan izin berhasil di ${status.toLowerCase()}!`);
+
+                // 2. Kirim POST ke backend spreadsheet
+                const response = await sendPostAction('processIzinStatus', { id: izinId, status: status });
+                loading.classList.add('hidden');
+
+                if (response.success) {
+                    showToast(`Status izin berhasil diunggah: ${status}`);
+                } else {
+                    showToast(`Berhasil diperbarui secara lokal.`);
+                }
+
                 updateAdminIzinBadge();
                 renderAdminIzin();
             }, 800);
