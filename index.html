@@ -52,7 +52,7 @@
         <div class="w-24 h-24 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center p-3 shadow-lg mb-4">
           <i class="fa-solid fa-graduation-cap text-white text-5xl"></i>
         </div>
-        <h1 class="text-white text-sm font-semibold tracking-wider uppercase opacity-90">SMAN 1</h1>
+        <h1 class="text-white text-sm font-semibold tracking-wider uppercase opacity-90">SMAN 1 Parung</h1>
         <h2 class="text-white text-4xl font-extrabold tracking-tight mt-1">ada<span class="text-emerald-300">nih</span>.</h2>
         <p class="text-emerald-100/80 text-xs mt-2 max-w-xs">Aplikasi Absensi Presensi Sekolah Modern & Real-Time</p>
 
@@ -260,11 +260,11 @@
               <div id="field-jam" class="hidden grid grid-cols-2 gap-3">
                 <div>
                   <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Tanggal</label>
-                  <input type="date" id="izin-tgl-tunggal" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <input type="date" id="izin-tgl-tunggal" class="w-full px-3 py-2 border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <div>
                   <label id="label-jam-tiba" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Jam Tiba/Pulang</label>
-                  <input type="time" id="izin-jam" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <input type="time" id="izin-jam" class="w-full px-3 py-2 border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
               </div>
 
@@ -611,7 +611,7 @@
           <!-- BAGIAN 2: AGENDA KESELURUHAN GURU -->
           <div class="bg-white rounded-2xl p-4 shadow-xl border border-slate-100">
             <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2 mb-3">
-              <i class="fa-solid fa-list-check text-teal-500"></i> Rekapitulasi Keseluruhan Guru
+              <i class="fa-solid fa-list-check text-teal-500"></i> Rekapitulasi Kehadiran Guru
             </h4>
             
             <div class="overflow-x-auto border rounded-xl">
@@ -660,6 +660,280 @@
 
   <!-- FE LOGIC ENGINE -->
   <script>
+    // ================= DUAL-MODE SCRIPT INTERCEPTOR / MOCK FOR CANVAS ENVIRONMENT =================
+    // Mendeteksi apakah berjalan di luar Google Apps Script (misalnya tab preview/browser mandiri)
+    if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+      console.info("Menjalankan aplikasi dalam Dual-Mode: Mengaktifkan Mock Database Lokal.");
+      
+      // Inisialisasi Mock Database Lokal jika kosong
+      if (!localStorage.getItem('adanih_mock_initialized')) {
+        localStorage.setItem('adanih_mock_initialized', 'true');
+        localStorage.setItem('adanih_mock_permissions', JSON.stringify([
+          { id_izin: "IZIN-102948", nip: "19950202", nama: "Budi Raharjo, S.Pd.", tipe: "Dinas Luar Full", lokasi_peta: "Dinas Pendidikan Kab. Bogor", tanggal_mulai: "2026-06-16", tanggal_selesai: "2026-06-17", jam_tiba_pulang: "", keterangan: "Pendampingan akreditasi", status_approval: "Menunggu" },
+          { id_izin: "IZIN-994821", nip: "19970303", nama: "Siti Aminah, S.Pd.", tipe: "Izin Terlambat Masuk", lokasi_peta: "", tanggal_mulai: "2026-06-15", tanggal_selesai: "2026-06-15", jam_tiba_pulang: "08:30", keterangan: "Ada keperluan keluarga", status_approval: "Menunggu" }
+        ]));
+        localStorage.setItem('adanih_mock_attendance', JSON.stringify([]));
+      }
+
+      window.google = {
+        script: {
+          run: {
+            withSuccessHandler: function(onSuccess) {
+              this._successHandler = onSuccess;
+              return this;
+            },
+            withFailureHandler: function(onFailure) {
+              this._failureHandler = onFailure;
+              return this;
+            },
+            
+            // Login Dummy
+            loginUser: function(username, password) {
+              var self = this;
+              setTimeout(function() {
+                if (username === "19950202" && password === "password123") {
+                  self._successHandler({
+                    success: true,
+                    user: {
+                      username: "19950202",
+                      nama: "Budi Raharjo, S.Pd.",
+                      role: "guru",
+                      nip: "19950202",
+                      jabatan: "Guru Ahli",
+                      pangkat: "Penata Muda III/a",
+                      alamat: "Jl. Diponegoro No. 12, Parung",
+                      foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+                    }
+                  });
+                } else if (username === "19800101" && password === "password123") {
+                  self._successHandler({
+                    success: true,
+                    user: {
+                      username: "19800101",
+                      nama: "Dwi Sturi, M.Pd.",
+                      role: "admin",
+                      nip: "19800101",
+                      jabatan: "Kepala Sekolah",
+                      pangkat: "Pembina IV/a",
+                      alamat: "Jl. Merdeka No. 1, Parung",
+                      foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150"
+                    }
+                  });
+                } else {
+                  self._successHandler({ success: false, message: "Username atau Password salah! (Uji coba: 19950202 atau 19800101)" });
+                }
+              }, 200);
+            },
+
+            // Ambil Status Absen Hari ini
+            getTodayAttendanceStatus: function(nip) {
+              var self = this;
+              setTimeout(function() {
+                var att = JSON.parse(localStorage.getItem('adanih_mock_attendance') || '[]');
+                var todayStr = "2026-06-15";
+                var record = att.find(function(item) { return item && item.nip === nip && item.tanggal === todayStr; });
+                self._successHandler(record || null);
+              }, 200);
+            },
+
+            // Ambil Live Presensi
+            getLivePresensi: function() {
+              var self = this;
+              setTimeout(function() {
+                var att = JSON.parse(localStorage.getItem('adanih_mock_attendance') || '[]');
+                var todayStr = "2026-06-15";
+                
+                var users = [
+                  { nip: "19800101", nama: "Dwi Sturi, M.Pd.", jabatan: "Kepala Sekolah", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150" },
+                  { nip: "19970303", nama: "Siti Aminah, S.Pd.", jabatan: "Guru Ahli", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150" },
+                  { nip: "19950202", nama: "Budi Raharjo, S.Pd.", jabatan: "Guru Ahli", foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" }
+                ];
+                
+                var liveList = users.map(function(user) {
+                  var record = att.find(function(item) { return item && item.nip === user.nip && item.tanggal === todayStr; });
+                  return {
+                    nip: user.nip,
+                    nama: user.nama,
+                    jabatan: user.jabatan,
+                    foto: user.foto,
+                    waktu_masuk: record ? record.waktu_masuk : "-",
+                    waktu_pulang: record ? record.waktu_pulang : "-",
+                    foto_masuk: record ? record.foto_masuk : "",
+                    lokasi_masuk: record ? record.lokasi_masuk : "-",
+                    status: record ? record.status : "Alfa"
+                  };
+                });
+                self._successHandler(liveList);
+              }, 200);
+            },
+
+            // Kirim Absen
+            submitPresensi: function(nip, nama, type, lat, lng, photoBase64) {
+              var self = this;
+              setTimeout(function() {
+                var att = JSON.parse(localStorage.getItem('adanih_mock_attendance') || '[]');
+                var todayStr = "2026-06-15";
+                var recordIndex = att.findIndex(function(item) { return item && item.nip === nip && item.tanggal === todayStr; });
+                
+                if (type === "masuk") {
+                  if (recordIndex !== -1) {
+                    self._successHandler({ success: false, message: "Sudah absen masuk!" });
+                    return;
+                  }
+                  att.push({
+                    nip: nip,
+                    nama: nama,
+                    tanggal: todayStr,
+                    waktu_masuk: "06:15:30",
+                    foto_masuk: photoBase64,
+                    lokasi_masuk: lat + "," + lng,
+                    jarak_masuk: "12m",
+                    waktu_pulang: "",
+                    foto_pulang: "",
+                    lokasi_pulang: "",
+                    jarak_pulang: "",
+                    status: "Hadir"
+                  });
+                } else {
+                  if (recordIndex === -1) {
+                    self._successHandler({ success: false, message: "Belum absen masuk!" });
+                    return;
+                  }
+                  att[recordIndex].waktu_pulang = "15:45:10";
+                  att[recordIndex].foto_pulang = photoBase64;
+                  att[recordIndex].lokasi_pulang = lat + "," + lng;
+                  att[recordIndex].jarak_pulang = "10m";
+                }
+                localStorage.setItem('adanih_mock_attendance', JSON.stringify(att));
+                self._successHandler({ success: true, message: "Berhasil mengirim presensi " + type.toUpperCase() + "!" });
+              }, 300);
+            },
+
+            // Kirim Izin (Simulasi)
+            submitIzin: function(payload) {
+              var self = this;
+              setTimeout(function() {
+                var list = JSON.parse(localStorage.getItem('adanih_mock_permissions') || '[]');
+                var idIzin = "IZIN-" + Math.floor(100000 + Math.random() * 900000);
+                list.unshift({
+                  id_izin: idIzin,
+                  nip: payload.nip,
+                  nama: payload.nama || "Guru SMAN 1",
+                  tipe: payload.tipe,
+                  lokasi_peta: payload.lokasi_peta || "",
+                  tanggal_mulai: payload.tanggal_mulai || "",
+                  tanggal_selesai: payload.tanggal_selesai || "",
+                  jam_tiba_pulang: payload.jam_tiba_pulang || "",
+                  keterangan: payload.keterangan,
+                  status_approval: "Menunggu"
+                });
+                localStorage.setItem('adanih_mock_permissions', JSON.stringify(list));
+                self._successHandler({ success: true, message: "Pengajuan izin berhasil terkirim!" });
+              }, 300);
+            },
+
+            // Ambil Daftar Izin (Simulasi)
+            getIzinList: function(nip) {
+              var self = this;
+              setTimeout(function() {
+                var list = JSON.parse(localStorage.getItem('adanih_mock_permissions') || '[]');
+                if (nip !== undefined && nip !== null && nip !== "") {
+                  list = list.filter(function(item) {
+                    return item && item.nip.toString().trim() === nip.toString().trim();
+                  });
+                }
+                self._successHandler(list);
+              }, 200);
+            },
+
+            // Update Status Approval Izin (Simulasi)
+            updateIzinStatus: function(idIzin, statusBaru) {
+              var self = this;
+              setTimeout(function() {
+                var list = JSON.parse(localStorage.getItem('adanih_mock_permissions') || '[]');
+                var idx = list.findIndex(function(item) { return item && item.id_izin === idIzin; });
+                if (idx !== -1) {
+                  list[idx].status_approval = statusBaru;
+                  localStorage.setItem('adanih_mock_permissions', JSON.stringify(list));
+                  
+                  // Jika disetujui, tambahkan baris dummy kehadiran
+                  if (statusBaru === "Disetujui") {
+                    var att = JSON.parse(localStorage.getItem('adanih_mock_attendance') || '[]');
+                    var tglStr = list[idx].tanggal_mulai || "2026-06-15";
+                    var exists = att.some(function(item) { return item && item.nip === list[idx].nip && item.tanggal === tglStr; });
+                    if (!exists) {
+                      att.push({
+                        nip: list[idx].nip,
+                        nama: list[idx].nama,
+                        tanggal: tglStr,
+                        waktu_masuk: "-",
+                        foto_masuk: "Izin Sistem",
+                        lokasi_masuk: "Sistem",
+                        jarak_masuk: "0m",
+                        waktu_pulang: "-",
+                        foto_pulang: "Izin Sistem",
+                        lokasi_pulang: "Sistem",
+                        jarak_pulang: "0m",
+                        status: list[idx].tipe
+                      });
+                      localStorage.setItem('adanih_mock_attendance', JSON.stringify(att));
+                    }
+                  }
+                  self._successHandler({ success: true, message: "Berhasil memperbarui status izin ke: " + statusBaru });
+                } else {
+                  self._successHandler({ success: false, message: "Data izin tidak ditemukan." });
+                }
+              }, 200);
+            },
+
+            // Ambil Laporan Kehadiran Guru (Simulasi)
+            getHistorisKehadiran: function(nip) {
+              var self = this;
+              setTimeout(function() {
+                var att = JSON.parse(localStorage.getItem('adanih_mock_attendance') || '[]');
+                var history = att.filter(function(item) { return item && item.nip === nip; }).map(function(item) {
+                  return {
+                    tanggal: item.tanggal,
+                    waktu_masuk: item.waktu_masuk,
+                    waktu_pulang: item.waktu_pulang,
+                    status: item.status
+                  };
+                });
+                
+                if (history.length === 0) {
+                  history.push(
+                    { tanggal: "2026-06-15", waktu_masuk: "06:22:10", waktu_pulang: "15:30:15", status: "Hadir" },
+                    { tanggal: "2026-06-12", waktu_masuk: "06:42:02", waktu_pulang: "15:32:00", status: "Terlambat" },
+                    { tanggal: "2026-06-11", waktu_masuk: "06:15:30", waktu_pulang: "-", status: "Hadir" }
+                  );
+                }
+                self._successHandler(history);
+              }, 200);
+            },
+
+            // Update Alamat Profil (Simulasi)
+            updateProfilAlamat: function(nip, alamat) {
+              var self = this;
+              setTimeout(function() {
+                self._successHandler({ success: true, message: "Alamat profil berhasil diperbarui!" });
+              }, 200);
+            },
+
+            // Ambil Semua Daftar Guru (Simulasi)
+            getAllGuruList: function() {
+              var self = this;
+              setTimeout(function() {
+                self._successHandler([
+                  { nip: "19950202", nama: "Budi Raharjo, S.Pd." },
+                  { nip: "19970303", nama: "Siti Aminah, S.Pd." }
+                ]);
+              }, 150);
+            }
+          }
+        }
+      };
+    }
+
     // Penormalan NIP yang tangguh di sisi Frontend
     function cleanNip(val) {
       if (val === undefined || val === null) return "";
@@ -1069,7 +1343,6 @@
       if (!video || !canvas) return;
       
       const context = canvas.getContext("2d");
-      
       canvas.width = 400;
       canvas.height = 300;
       
@@ -1615,7 +1888,6 @@
       google.script.run.withSuccessHandler(renderLivePresenceAdmin).getLivePresensi();
     }
 
-    // MEMUAT REKAPITULASI AGENDA KESELURUHAN GURU (TABEL)
     function setAdminGroupSubFilter(subType) {
       currentAdminGroupSubFilter = subType;
       const subs = ['hadir', 'telat', 'izin', 'alfa'];
