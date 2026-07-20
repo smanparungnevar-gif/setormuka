@@ -669,7 +669,7 @@
       if (!localStorage.getItem('adanih_mock_initialized')) {
         localStorage.setItem('adanih_mock_initialized', 'true');
         localStorage.setItem('adanih_mock_permissions', JSON.stringify([
-          { id_izin: "IZIN-102948", nip: "19950202", nama: "Budi Raharjo, S.Pd.", tipe: "Dinas Luar Full", lokasi_peta: "Dinas Pendidikan Kab. Bogor", tanggal_mulai: "2026-06-16", tanggal_selesai: "2026-06-17", jam_tiba_pulang: "", keterangan: "Pendampingan akreditasi", status_approval: "Menunggu" },
+          { id_izin: "IZIN-102948", nip: "19950202", nama: "Suyanso, S.Pd.", tipe: "Dinas Luar Full", lokasi_peta: "Dinas Pendidikan Kab. Bogor", tanggal_mulai: "2026-06-16", tanggal_selesai: "2026-06-17", jam_tiba_pulang: "", keterangan: "Pendampingan akreditasi", status_approval: "Menunggu" },
           { id_izin: "IZIN-994821", nip: "19970303", nama: "Siti Aminah, S.Pd.", tipe: "Izin Terlambat Masuk", lokasi_peta: "", tanggal_mulai: "2026-06-15", tanggal_selesai: "2026-06-15", jam_tiba_pulang: "08:30", keterangan: "Ada keperluan keluarga", status_approval: "Menunggu" }
         ]));
         localStorage.setItem('adanih_mock_attendance', JSON.stringify([]));
@@ -687,7 +687,7 @@
               return this;
             },
             
-            // Login Dummy
+            // Login Dummy (diselaraskan dengan 3 akun default pada sheet Users)
             loginUser: function(username, password) {
               var self = this;
               setTimeout(function() {
@@ -696,13 +696,27 @@
                     success: true,
                     user: {
                       username: "19950202",
-                      nama: "Budi Raharjo, S.Pd.",
+                      nama: "Suyanso, S.Pd.",
                       role: "guru",
                       nip: "19950202",
                       jabatan: "Guru Ahli",
                       pangkat: "Penata Muda III/a",
                       alamat: "Jl. Diponegoro No. 12, Parung",
                       foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+                    }
+                  });
+                } else if (username === "19970303" && password === "password123") {
+                  self._successHandler({
+                    success: true,
+                    user: {
+                      username: "19970303",
+                      nama: "Siti Aminah, S.Pd.",
+                      role: "guru",
+                      nip: "19970303",
+                      jabatan: "Guru Ahli",
+                      pangkat: "Penata Muda III/a",
+                      alamat: "Jl. Sudirman No. 45, Parung",
+                      foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150"
                     }
                   });
                 } else if (username === "19800101" && password === "password123") {
@@ -720,7 +734,7 @@
                     }
                   });
                 } else {
-                  self._successHandler({ success: false, message: "Username atau Password salah! (Uji coba: 19950202 atau 19800101)" });
+                  self._successHandler({ success: false, message: "Username atau Password salah! (Uji coba: 19950202, 19970303, atau 19800101)" });
                 }
               }, 200);
             },
@@ -745,8 +759,8 @@
                 
                 var users = [
                   { nip: "19800101", nama: "Dwi Astuti Indriati, M.Pd.", jabatan: "Kepala Sekolah", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150" },
-                  { nip: "19970303", nama: "Siti Aminah, S.Pd.", jabatan: "Guru Ahli", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150" },
-                  { nip: "19950202", nama: "Budi Raharjo, S.Pd.", jabatan: "Guru Ahli", foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" }
+                  { nip: "19950202", nama: "Suyanso, S.Pd.", jabatan: "Guru Ahli", foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" },
+                  { nip: "19970303", nama: "Siti Aminah, S.Pd.", jabatan: "Guru Ahli", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150" }
                 ];
                 
                 var liveList = users.map(function(user) {
@@ -924,7 +938,7 @@
               var self = this;
               setTimeout(function() {
                 self._successHandler([
-                  { nip: "19950202", nama: "Budi Raharjo, S.Pd." },
+                  { nip: "19950202", nama: "Suyanso, S.Pd." },
                   { nip: "19970303", nama: "Siti Aminah, S.Pd." }
                 ]);
               }, 150);
@@ -1053,10 +1067,10 @@
             
             const distanceStatusEl = document.getElementById("distance-status");
             if (distanceStatusEl) {
-              if (actualDistance <= 100) {
+              if (actualDistance <= RADIUS_MAKSIMAL_METER) {
                 distanceStatusEl.innerHTML = `<span class="text-emerald-600 font-extrabold"><i class="fa-solid fa-circle-check"></i> ${distText} (Dalam Radius Kerja)</span>`;
               } else {
-                distanceStatusEl.innerHTML = `<span class="text-rose-500 font-extrabold"><i class="fa-solid fa-circle-xmark"></i> ${distText} (Di Luar Radius Kerja)</span>`;
+                distanceStatusEl.innerHTML = `<span class="text-rose-500 font-extrabold"><i class="fa-solid fa-circle-xmark"></i> ${distText} (Di Luar Radius Kerja, maks ${RADIUS_MAKSIMAL_METER}m)</span>`;
               }
             }
           },
